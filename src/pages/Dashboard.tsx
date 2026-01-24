@@ -254,7 +254,7 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
                   <Icon name="Download" size={18} className="mr-2" />
                   Скачать все проекты
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={() => onNavigate('settings')}>
                   <Icon name="Settings" size={18} className="mr-2" />
                   Настройки аккаунта
                 </Button>
