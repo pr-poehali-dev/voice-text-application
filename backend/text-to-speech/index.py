@@ -3,7 +3,9 @@ import os
 import requests
 import uuid
 import boto3
+import re
 from datetime import datetime
+from io import BytesIO
 
 def handler(event: dict, context) -> dict:
     """
@@ -55,14 +57,14 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
         
-        if len(text) > 5000:
+        if len(text) > 50000:
             return {
                 'statusCode': 400,
                 'headers': {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 },
-                'body': json.dumps({'error': 'Текст слишком длинный (максимум 5000 символов)'}),
+                'body': json.dumps({'error': 'Текст слишком длинный (максимум 50000 символов)'}),
                 'isBase64Encoded': False
             }
         
@@ -102,32 +104,59 @@ def handler(event: dict, context) -> dict:
             'ogg': 'oggopus'
         }
         
-        data = {
-            'text': text,
-            'voice': voice,
-            'speed': str(speed),
-            'format': format_map.get(format_type, 'mp3'),
-            'sampleRateHertz': '48000',
-            'folderId': folder_id
-        }
+        # Разбиваем текст на части по 1000 символов по границам предложений
+        def split_text(text, max_chars=1000):
+            sentences = re.split(r'(?<=[.!?])\s+', text)
+            chunks = []
+            current_chunk = ''
+            
+            for sentence in sentences:
+                if len(current_chunk) + len(sentence) <= max_chars:
+                    current_chunk += sentence + ' '
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    current_chunk = sentence + ' '
+            
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            
+            return chunks
         
-        response = requests.post(url, headers=headers, data=data, timeout=30)
+        text_chunks = split_text(text, max_chars=1000)
+        audio_chunks = []
         
-        if response.status_code != 200:
-            error_text = response.text
-            return {
-                'statusCode': response.status_code,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({
-                    'error': f'Ошибка Yandex API: {error_text}'
-                }),
-                'isBase64Encoded': False
+        # Синтезируем каждую часть
+        for chunk in text_chunks:
+            data = {
+                'text': chunk,
+                'voice': voice,
+                'speed': str(speed),
+                'format': format_map.get(format_type, 'mp3'),
+                'sampleRateHertz': '48000',
+                'folderId': folder_id
             }
+            
+            response = requests.post(url, headers=headers, data=data, timeout=25)
+            
+            if response.status_code != 200:
+                error_text = response.text
+                return {
+                    'statusCode': response.status_code,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({
+                        'error': f'Ошибка Yandex API: {error_text}'
+                    }),
+                    'isBase64Encoded': False
+                }
+            
+            audio_chunks.append(response.content)
         
-        audio_data = response.content
+        # Склеиваем аудио части (для MP3 просто конкатенация)
+        audio_data = b''.join(audio_chunks)
         
         s3 = boto3.client('s3',
             endpoint_url='https://bucket.poehali.dev',
