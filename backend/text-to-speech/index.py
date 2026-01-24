@@ -220,16 +220,22 @@ def handler(event: dict, context) -> dict:
         if user_id:
             try:
                 dsn = os.environ.get('DATABASE_URL')
-                if dsn:
-                    conn = psycopg2.connect(dsn)
-                    cur = conn.cursor()
-                    
-                    # Проверяем и сбрасываем лимит если начался новый месяц
-                    cur.execute("""
-                        SELECT usage_reset_date, characters_used
-                        FROM users
-                        WHERE id = %s
-                    """, (user_id,))
+                if not dsn:
+                    raise Exception('DATABASE_URL не настроен')
+                
+                # Добавляем схему в строку подключения
+                schema_name = os.environ.get('MAIN_DB_SCHEMA', 'public')
+                dsn_with_schema = f"{dsn} options='-c search_path={schema_name}'"
+                
+                conn = psycopg2.connect(dsn_with_schema)
+                cur = conn.cursor()
+                
+                # Проверяем и сбрасываем лимит если начался новый месяц
+                cur.execute("""
+                    SELECT usage_reset_date, characters_used
+                    FROM users
+                    WHERE id = %s
+                """, (user_id,))
                     
                     user_data = cur.fetchone()
                     if user_data:
@@ -281,6 +287,17 @@ def handler(event: dict, context) -> dict:
                     conn.close()
             except Exception as db_error:
                 print(f'Database error: {db_error}')
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({
+                        'error': f'Ошибка сохранения: {str(db_error)}. Пожалуйста, обратитесь к администратору.'
+                    }),
+                    'isBase64Encoded': False
+                }
         
         return {
             'statusCode': 200,

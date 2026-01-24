@@ -47,7 +47,11 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
         
-        conn = psycopg2.connect(dsn)
+        # Добавляем схему в строку подключения
+        schema_name = os.environ.get('MAIN_DB_SCHEMA', 'public')
+        dsn_with_schema = f"{dsn} options='-c search_path={schema_name}'"
+        
+        conn = psycopg2.connect(dsn_with_schema)
         cur = conn.cursor()
         
         # Общее количество пользователей
