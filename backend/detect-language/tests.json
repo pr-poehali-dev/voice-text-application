@@ -1,0 +1,36 @@
+{
+  "tests": [
+    {
+      "name": "Detect Russian language",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "text": "Привет, как дела?"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "language": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Detect English language",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "text": "Hello, how are you?"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "language": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "OPTIONS request for CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}

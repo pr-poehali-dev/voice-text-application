@@ -29,6 +29,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
   const [format, setFormat] = useState("mp3");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -85,6 +86,47 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
   }[user.plan];
 
   const canGenerate = characterCount > 0 && characterCount <= maxCharacters;
+
+  const handleDetectLanguage = async () => {
+    if (!text.trim()) {
+      return;
+    }
+
+    setIsDetecting(true);
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/c454dbcf-7093-4694-ba09-19d92e95974d', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.language) {
+        const detectedLang = data.language;
+        
+        if (languages.find(l => l.code === detectedLang)) {
+          setSelectedLanguage(detectedLang);
+          
+          const voicesForLang = voices.filter(v => v.language === detectedLang && !v.premium);
+          if (voicesForLang.length > 0) {
+            setSelectedVoice(voicesForLang[0].id);
+          }
+
+          const langName = languages.find(l => l.code === detectedLang)?.name || detectedLang;
+          toast({
+            title: "Язык определён",
+            description: `Обнаружен ${langName}`
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Language detection error:', error);
+    } finally {
+      setIsDetecting(false);
+    }
+  };
 
   const handleTranslate = async (targetLang: string) => {
     if (!text.trim()) {
@@ -284,7 +326,12 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                 <Textarea
                   placeholder="Введите текст для озвучки..."
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => {
+                    setText(e.target.value);
+                    if (e.target.value.trim().length > 10) {
+                      handleDetectLanguage();
+                    }
+                  }}
                   className="min-h-[200px] text-base"
                 />
                 <div className="flex items-center justify-between">
@@ -293,6 +340,19 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                     <span className="ml-4">Слов: {wordCount}</span>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDetectLanguage}
+                      disabled={isDetecting || !text.trim()}
+                    >
+                      {isDetecting ? (
+                        <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
+                      ) : (
+                        <Icon name="Languages" size={16} className="mr-2" />
+                      )}
+                      Определить язык
+                    </Button>
                     <Select onValueChange={handleTranslate} disabled={isTranslating || !text.trim()}>
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Перевести на..." />
