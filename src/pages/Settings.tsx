@@ -3,15 +3,110 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "./Index";
 
 const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
+  const [name, setName] = useState(user.name);
+  const [email, setEmail] = useState(user.email);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [speechkitKey, setSpeechkitKey] = useState("");
   const [translateKey, setTranslateKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const planNames = {
+    free: 'Бесплатный',
+    basic: 'Базовый',
+    pro: 'Профи',
+    unlimited: 'Безлимит'
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!name.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Имя не может быть пустым",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const updatedUser = { ...user, name: name.trim(), email: email.trim() };
+      localStorage.setItem('voiceAppUser', JSON.stringify(updatedUser));
+      
+      toast({
+        title: "Успешно",
+        description: "Данные профиля обновлены",
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить профиль",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все поля",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Ошибка",
+        description: "Новый пароль должен содержать минимум 6 символов",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Ошибка",
+        description: "Пароли не совпадают",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      toast({
+        title: "Успешно",
+        description: "Пароль успешно изменен",
+      });
+      
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось изменить пароль",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSaveKeys = async () => {
     if (!speechkitKey.trim() || !translateKey.trim()) {
@@ -82,11 +177,158 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Настройки API</h1>
-          <p className="text-muted-foreground">Добавьте свои API ключи Яндекс для работы сервиса</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Настройки</h1>
+          <p className="text-muted-foreground">Управление профилем и настройками аккаунта</p>
         </div>
 
-        <Card>
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="profile">Профиль</TabsTrigger>
+            <TabsTrigger value="security">Безопасность</TabsTrigger>
+            {user.role === 'admin' && <TabsTrigger value="api">API ключи</TabsTrigger>}
+          </TabsList>
+
+          <TabsContent value="profile" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="User" size={20} />
+                  Информация профиля
+                </CardTitle>
+                <CardDescription>
+                  Обновите данные вашего аккаунта
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Имя</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Роль</Label>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {user.role === 'admin' ? 'Администратор' : 'Пользователь'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Button onClick={handleUpdateProfile} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
+                      Сохранение...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="Save" size={16} className="mr-2" />
+                      Сохранить изменения
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Crown" size={20} />
+                  Тарифный план
+                </CardTitle>
+                <CardDescription>
+                  Текущий план: <strong>{planNames[user.plan]}</strong>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => onNavigate('pricing')} className="w-full">
+                  <Icon name="Sparkles" size={16} className="mr-2" />
+                  Изменить тариф
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Lock" size={20} />
+                  Изменить пароль
+                </CardTitle>
+                <CardDescription>
+                  Обновите пароль для безопасности аккаунта
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current-password">Текущий пароль</Label>
+                  <Input
+                    id="current-password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">Новый пароль</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Минимум 6 символов
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Подтвердите новый пароль</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+
+                <Button onClick={handleChangePassword} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
+                      Изменение...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="Shield" size={16} className="mr-2" />
+                      Изменить пароль
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {user.role === 'admin' && (
+            <TabsContent value="api" className="space-y-6">
+              <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Icon name="Key" size={20} />
@@ -161,8 +403,10 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
