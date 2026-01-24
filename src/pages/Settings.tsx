@@ -120,7 +120,6 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
 
     setIsLoading(true);
     
-    // Сохраняем ключи в localStorage (в реальном приложении это должно быть на backend)
     try {
       localStorage.setItem('YANDEX_SPEECHKIT_API_KEY', speechkitKey.trim());
       localStorage.setItem('YANDEX_TRANSLATE_API_KEY', translateKey.trim());
@@ -329,83 +328,84 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
           {user.role === 'admin' && (
             <TabsContent value="api" className="space-y-6">
               <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icon name="Key" size={20} />
-              API ключи Yandex Cloud
-            </CardTitle>
-            <CardDescription>
-              Эти ключи используются для синтеза речи и перевода текста
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="speechkit">YANDEX_SPEECHKIT_API_KEY</Label>
-              <Input
-                id="speechkit"
-                type="password"
-                placeholder="AQVNxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                value={speechkitKey}
-                onChange={(e) => setSpeechkitKey(e.target.value)}
-                className="font-mono"
-              />
-              <p className="text-sm text-muted-foreground">
-                Для синтеза речи (SpeechKit TTS)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="translate">YANDEX_TRANSLATE_API_KEY</Label>
-              <Input
-                id="translate"
-                type="password"
-                placeholder="AQVNxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                value={translateKey}
-                onChange={(e) => setTranslateKey(e.target.value)}
-                className="font-mono"
-              />
-              <p className="text-sm text-muted-foreground">
-                Для перевода текста (Yandex Translate)
-              </p>
-            </div>
-
-            <div className="pt-4 space-y-4">
-              <Button 
-                onClick={handleSaveKeys} 
-                disabled={isLoading}
-                className="w-full"
-              >
-                {isLoading ? (
-                  <>
-                    <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
-                    Сохранение...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Save" size={16} className="mr-2" />
-                    Сохранить ключи
-                  </>
-                )}
-              </Button>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex gap-3">
-                  <Icon name="Info" size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-blue-900">
-                    <p className="font-medium mb-2">Как получить API ключи:</p>
-                    <ol className="list-decimal ml-4 space-y-1">
-                      <li>Откройте <a href="https://console.cloud.yandex.ru" target="_blank" rel="noopener noreferrer" className="underline">console.cloud.yandex.ru</a></li>
-                      <li>Перейдите в "Сервисные аккаунты"</li>
-                      <li>Создайте аккаунт с ролями: <code className="bg-blue-100 px-1 rounded">ai.speechkit-tts.user</code> и <code className="bg-blue-100 px-1 rounded">ai.translate.user</code></li>
-                      <li>Создайте API-ключ и скопируйте его</li>
-                    </ol>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="Key" size={20} />
+                    API ключи Yandex Cloud
+                  </CardTitle>
+                  <CardDescription>
+                    Эти ключи используются для синтеза речи и перевода текста
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="speechkit">YANDEX_SPEECHKIT_API_KEY</Label>
+                    <Input
+                      id="speechkit"
+                      type="password"
+                      placeholder="AQVNxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                      value={speechkitKey}
+                      onChange={(e) => setSpeechkitKey(e.target.value)}
+                      className="font-mono"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Для синтеза речи (SpeechKit TTS)
+                    </p>
                   </div>
-                </div>
-              </div>
-            </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="translate">YANDEX_TRANSLATE_API_KEY</Label>
+                    <Input
+                      id="translate"
+                      type="password"
+                      placeholder="AQVNxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                      value={translateKey}
+                      onChange={(e) => setTranslateKey(e.target.value)}
+                      className="font-mono"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Для перевода текста (Yandex Translate)
+                    </p>
+                  </div>
+
+                  <div className="pt-4 space-y-4">
+                    <Button 
+                      onClick={handleSaveKeys} 
+                      disabled={isLoading}
+                      className="w-full"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
+                          Сохранение...
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="Save" size={16} className="mr-2" />
+                          Сохранить ключи
+                        </>
+                      )}
+                    </Button>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex gap-3">
+                        <Icon name="Info" size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-blue-900">
+                          <p className="font-medium mb-2">Как получить API ключи:</p>
+                          <ol className="list-decimal ml-4 space-y-1">
+                            <li>Откройте <a href="https://console.cloud.yandex.ru" target="_blank" rel="noopener noreferrer" className="underline">console.cloud.yandex.ru</a></li>
+                            <li>Перейдите в "Сервисные аккаунты"</li>
+                            <li>Создайте аккаунт с ролями: <code className="bg-blue-100 px-1 rounded">ai.speechkit-tts.user</code> и <code className="bg-blue-100 px-1 rounded">ai.translate.user</code></li>
+                            <li>Создайте API-ключ и скопируйте его</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
