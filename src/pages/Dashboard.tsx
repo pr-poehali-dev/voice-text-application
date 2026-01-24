@@ -1,22 +1,98 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 import type { User } from "./Index";
 
-const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
-  const stats = [
-    { title: "Озвучек создано", value: "24", icon: "Volume2", color: "text-blue-600" },
-    { title: "Символов использовано", value: "12,450", icon: "FileText", color: "text-purple-600" },
-    { title: "Проектов", value: "8", icon: "FolderOpen", color: "text-green-600" },
-    { title: "Часов аудио", value: "2.5", icon: "Clock", color: "text-orange-600" },
-  ];
+interface UserStats {
+  total_generations: number;
+  total_characters: number;
+  total_projects: number;
+  total_audio_duration: number;
+}
 
-  const recentProjects = [
-    { name: "Видеоурок по маркетингу", voice: "Алёна", date: "Сегодня, 14:30", duration: "5:23", status: "completed" },
-    { name: "Озвучка для подкаста", voice: "Филипп", date: "Вчера, 18:45", duration: "12:15", status: "completed" },
-    { name: "Реклама продукта", voice: "Даша", date: "2 дня назад", duration: "0:45", status: "completed" },
+interface Project {
+  id: number;
+  title: string;
+  text: string;
+  audio_url: string;
+  voice: string;
+  speed: number;
+  format: string;
+  character_count: number;
+  audio_duration: number;
+  created_at: string;
+}
+
+const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
+  const [stats, setStats] = useState<UserStats>({
+    total_generations: 0,
+    total_characters: 0,
+    total_projects: 0,
+    total_audio_duration: 0
+  });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchUserData();
+  }, [user.id]);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch(`https://functions.poehali.dev/e0dc4626-43ba-410e-b95b-f6d0859c3bdb?userId=${user.id}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setStats(data.stats);
+        setProjects(data.projects);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return hours > 0 ? `${hours}ч ${minutes}м` : `${minutes}м`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+
+    if (diffInHours < 24) {
+      return `Сегодня, ${date.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (diffInHours < 48) {
+      return `Вчера, ${date.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+      return date.toLocaleDateString('ru', { day: 'numeric', month: 'long' });
+    }
+  };
+
+  const handleDownload = (audioUrl: string, projectName: string) => {
+    const link = document.createElement('a');
+    link.href = audioUrl;
+    link.download = `${projectName}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const statsData = [
+    { title: "Озвучек создано", value: stats.total_generations.toString(), icon: "Volume2", color: "text-blue-600" },
+    { title: "Символов использовано", value: stats.total_characters.toLocaleString('ru'), icon: "FileText", color: "text-purple-600" },
+    { title: "Проектов", value: stats.total_projects.toString(), icon: "FolderOpen", color: "text-green-600" },
+    { title: "Часов аудио", value: (stats.total_audio_duration / 3600).toFixed(1), icon: "Clock", color: "text-orange-600" },
   ];
 
   const planDetails = {
@@ -27,7 +103,7 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
   };
 
   const currentPlan = planDetails[user.plan];
-  const usedCharacters = 12450;
+  const usedCharacters = stats.total_characters;
   const usagePercentage = currentPlan.limit === Infinity ? 0 : (usedCharacters / currentPlan.limit) * 100;
 
   return (
@@ -65,7 +141,7 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
+          {statsData.map((stat, index) => (
             <Card key={index} className="hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -76,7 +152,9 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                <div className="text-2xl font-bold text-foreground">
+                  {isLoading ? '...' : stat.value}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -92,31 +170,36 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentProjects.map((project, index) => (
-                  <div key={index} className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors border">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icon name="Play" size={20} className="text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{project.name}</p>
-                      <p className="text-xs text-muted-foreground">Голос: {project.voice} • {project.duration}</p>
-                      <p className="text-xs text-muted-foreground">{project.date}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Icon name="Download" size={16} />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="Share2" size={16} />
-                      </Button>
-                    </div>
+                {isLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Загрузка...</div>
+                ) : projects.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Icon name="FileX" size={48} className="mx-auto mb-2 opacity-50" />
+                    <p>Пока нет проектов</p>
+                    <Button variant="link" onClick={() => onNavigate('studio')} className="mt-2">
+                      Создать первую озвучку
+                    </Button>
                   </div>
-                ))}
+                ) : (
+                  projects.map((project) => (
+                    <div key={project.id} className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors border">
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Icon name="Play" size={20} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{project.title}</p>
+                        <p className="text-xs text-muted-foreground">Голос: {project.voice} • {formatDuration(project.audio_duration)}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(project.created_at)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleDownload(project.audio_url, project.title)}>
+                          <Icon name="Download" size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-              <Button variant="outline" className="w-full mt-4">
-                <Icon name="FolderOpen" size={16} className="mr-2" />
-                Все проекты
-              </Button>
             </CardContent>
           </Card>
 
@@ -147,7 +230,7 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
                 )}
 
                 {user.plan !== 'unlimited' && (
-                  <Button className="w-full">
+                  <Button className="w-full" onClick={() => onNavigate('pricing')}>
                     <Icon name="Sparkles" size={16} className="mr-2" />
                     Улучшить тариф
                   </Button>

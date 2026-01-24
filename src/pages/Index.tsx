@@ -5,6 +5,7 @@ import Studio from "./Studio";
 import Dashboard from "./Dashboard";
 import AdminPanel from "./AdminPanel";
 import Settings from "./Settings";
+import Pricing from "./Pricing";
 
 export interface User {
   id: number;
@@ -16,7 +17,7 @@ export interface User {
 }
 
 const Index = () => {
-  const [currentPage, setCurrentPage] = useState<"landing" | "auth" | "studio" | "dashboard" | "admin" | "settings">("landing");
+  const [currentPage, setCurrentPage] = useState<"landing" | "auth" | "studio" | "dashboard" | "admin" | "settings" | "pricing" | "payment">("landing");
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ const Index = () => {
     setCurrentPage('landing');
   };
 
-  const handleNavigate = (page: "landing" | "auth" | "studio" | "dashboard" | "admin" | "settings") => {
+  const handleNavigate = (page: "landing" | "auth" | "studio" | "dashboard" | "admin" | "settings" | "pricing" | "payment") => {
     setCurrentPage(page);
   };
 
@@ -61,6 +62,8 @@ const Index = () => {
         return user.role === 'admin' ? <AdminPanel user={user} onNavigate={handleNavigate} onLogout={handleLogout} /> : <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
       case "settings":
         return <Settings user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
+      case "pricing":
+        return <Pricing user={user} onNavigate={handleNavigate} />;
       default:
         return <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
     }

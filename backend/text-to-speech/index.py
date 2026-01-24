@@ -4,6 +4,7 @@ import requests
 import uuid
 import boto3
 import re
+import psycopg2
 from datetime import datetime
 from io import BytesIO
 
@@ -210,6 +211,45 @@ def handler(event: dict, context) -> dict:
         
         cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{file_key}"
         
+        # Примерная длительность аудио: 150 слов в минуту = 2.5 слова в секунду
+        word_count = len(text.split())
+        audio_duration = int((word_count / 2.5) / speed)
+        
+        # Сохраняем проект и обновляем статистику
+        if user_id:
+            try:
+                dsn = os.environ.get('DATABASE_URL')
+                if dsn:
+                    conn = psycopg2.connect(dsn)
+                    cur = conn.cursor()
+                    
+                    # Генерируем название проекта из первых слов текста
+                    title_words = text.split()[:5]
+                    title = ' '.join(title_words) + ('...' if len(text.split()) > 5 else '')
+                    
+                    # Сохраняем проект
+                    cur.execute("""
+                        INSERT INTO projects (user_id, title, text, audio_url, voice, speed, format, character_count, audio_duration)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (user_id, title, text, cdn_url, voice, speed, format_type, len(text), audio_duration))
+                    
+                    # Обновляем статистику пользователя
+                    cur.execute("""
+                        INSERT INTO user_stats (user_id, total_generations, total_characters, total_projects, total_audio_duration)
+                        VALUES (%s, 1, %s, 1, %s)
+                        ON CONFLICT (user_id) DO UPDATE SET
+                            total_generations = user_stats.total_generations + 1,
+                            total_characters = user_stats.total_characters + %s,
+                            total_projects = user_stats.total_projects + 1,
+                            total_audio_duration = user_stats.total_audio_duration + %s
+                    """, (user_id, len(text), audio_duration, len(text), audio_duration))
+                    
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+            except Exception as db_error:
+                print(f'Database error: {db_error}')
+        
         return {
             'statusCode': 200,
             'headers': {
@@ -220,7 +260,8 @@ def handler(event: dict, context) -> dict:
                 'audio_url': cdn_url,
                 'format': format_type,
                 'character_count': len(text),
-                'voice': voice
+                'voice': voice,
+                'audio_duration': audio_duration
             }),
             'isBase64Encoded': False
         }
