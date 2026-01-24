@@ -67,6 +67,8 @@ def handler(event: dict, context) -> dict:
             }
         
         api_key = os.environ.get('YANDEX_SPEECHKIT_API_KEY')
+        folder_id = os.environ.get('YANDEX_FOLDER_ID')
+        
         if not api_key:
             return {
                 'statusCode': 500,
@@ -75,6 +77,17 @@ def handler(event: dict, context) -> dict:
                     'Access-Control-Allow-Origin': '*'
                 },
                 'body': json.dumps({'error': 'API ключ Yandex SpeechKit не настроен'}),
+                'isBase64Encoded': False
+            }
+        
+        if not folder_id:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': 'YANDEX_FOLDER_ID не настроен'}),
                 'isBase64Encoded': False
             }
         
@@ -94,7 +107,8 @@ def handler(event: dict, context) -> dict:
             'voice': voice,
             'speed': str(speed),
             'format': format_map.get(format_type, 'mp3'),
-            'sampleRateHertz': '48000'
+            'sampleRateHertz': '48000',
+            'folderId': folder_id
         }
         
         response = requests.post(url, headers=headers, data=data, timeout=30)
