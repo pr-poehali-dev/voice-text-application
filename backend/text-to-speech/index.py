@@ -57,14 +57,14 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
         
-        if len(text) > 4000:
+        if len(text) > 5000:
             return {
                 'statusCode': 400,
                 'headers': {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 },
-                'body': json.dumps({'error': 'Текст слишком длинный (максимум 4000 символов). Разбейте на несколько частей.'}),
+                'body': json.dumps({'error': 'Текст слишком длинный (максимум 5000 символов). Разбейте на несколько частей.'}),
                 'isBase64Encoded': False
             }
         
