@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Проверка OPTIONS для CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedHeaders": {
+        "Access-Control-Allow-Origin": "*"
+      }
+    },
+    {
+      "name": "Перевод с русского на английский",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "text": "Привет, мир!",
+        "targetLanguage": "en",
+        "sourceLanguage": "ru"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "translated_text": "string",
+        "detected_language": "string",
+        "target_language": "en"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

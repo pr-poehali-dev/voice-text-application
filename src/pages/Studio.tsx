@@ -16,37 +16,64 @@ interface Voice {
   name: string;
   gender: "male" | "female";
   language: string;
+  languageName: string;
   premium: boolean;
   description: string;
 }
 
 const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
   const [text, setText] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("ru");
   const [selectedVoice, setSelectedVoice] = useState<string>("alena");
   const [speed, setSpeed] = useState([1.0]);
-  const [pitch, setPitch] = useState([1.0]);
   const [format, setFormat] = useState("mp3");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const voices: Voice[] = [
-    { id: "alena", name: "Алёна", gender: "female", language: "ru", premium: false, description: "Приятный женский голос" },
-    { id: "filipp", name: "Филипп", gender: "male", language: "ru", premium: false, description: "Уверенный мужской голос" },
-    { id: "ermil", name: "Ермил", gender: "male", language: "ru", premium: false, description: "Спокойный мужской голос" },
-    { id: "jane", name: "Джейн", gender: "female", language: "ru", premium: false, description: "Энергичный женский голос" },
-    { id: "omazh", name: "Омаж", gender: "female", language: "ru", premium: false, description: "Мягкий женский голос" },
-    { id: "zahar", name: "Захар", gender: "male", language: "ru", premium: false, description: "Дружелюбный мужской голос" },
-    { id: "dasha", name: "Даша", gender: "female", language: "ru", premium: true, description: "Профессиональный диктор" },
-    { id: "julia", name: "Юлия", gender: "female", language: "ru", premium: true, description: "Элегантный женский голос" },
-    { id: "lera", name: "Лера", gender: "female", language: "ru", premium: true, description: "Молодежный женский голос" },
-    { id: "masha", name: "Маша", gender: "female", language: "ru", premium: true, description: "Теплый женский голос" },
-    { id: "marina", name: "Марина", gender: "female", language: "ru", premium: true, description: "Бизнес-тон женский" },
-    { id: "alexander", name: "Александр", gender: "male", language: "ru", premium: true, description: "Глубокий мужской голос" },
-    { id: "kirill", name: "Кирилл", gender: "male", language: "ru", premium: true, description: "Харизматичный мужской" },
-    { id: "anton", name: "Антон", gender: "male", language: "ru", premium: true, description: "Мужской голос-диктор" },
+  const languages = [
+    { code: "ru", name: "Русский", flag: "🇷🇺" },
+    { code: "en", name: "English", flag: "🇺🇸" },
+    { code: "de", name: "Deutsch", flag: "🇩🇪" },
+    { code: "fr", name: "Français", flag: "🇫🇷" },
+    { code: "es", name: "Español", flag: "🇪🇸" },
+    { code: "it", name: "Italiano", flag: "🇮🇹" },
+    { code: "tr", name: "Türkçe", flag: "🇹🇷" },
+    { code: "uz", name: "O'zbek", flag: "🇺🇿" },
+    { code: "kk", name: "Қазақ", flag: "🇰🇿" },
   ];
 
+  const voices: Voice[] = [
+    { id: "alena", name: "Алёна", gender: "female", language: "ru", languageName: "Русский", premium: false, description: "Приятный женский голос" },
+    { id: "filipp", name: "Филипп", gender: "male", language: "ru", languageName: "Русский", premium: false, description: "Уверенный мужской голос" },
+    { id: "ermil", name: "Ермил", gender: "male", language: "ru", languageName: "Русский", premium: false, description: "Спокойный мужской голос" },
+    { id: "jane", name: "Джейн", gender: "female", language: "ru", languageName: "Русский", premium: false, description: "Энергичный женский голос" },
+    { id: "omazh", name: "Омаж", gender: "female", language: "ru", languageName: "Русский", premium: false, description: "Мягкий женский голос" },
+    { id: "zahar", name: "Захар", gender: "male", language: "ru", languageName: "Русский", premium: false, description: "Дружелюбный мужской голос" },
+    
+    { id: "john", name: "John", gender: "male", language: "en", languageName: "English", premium: false, description: "Clear American voice" },
+    { id: "jane-en", name: "Jane", gender: "female", language: "en", languageName: "English", premium: false, description: "Professional female voice" },
+    { id: "madirus", name: "Madirus", gender: "male", language: "en", languageName: "English", premium: true, description: "Deep male voice" },
+    
+    { id: "lea", name: "Lea", gender: "female", language: "de", languageName: "Deutsch", premium: true, description: "Freundliche deutsche Stimme" },
+    { id: "bruno", name: "Bruno", gender: "male", language: "de", languageName: "Deutsch", premium: true, description: "Klare männliche Stimme" },
+    
+    { id: "amira", name: "Amira", gender: "female", language: "uz", languageName: "O'zbek", premium: true, description: "O'zbek ayol ovozi" },
+    { id: "nigora", name: "Nigora", gender: "female", language: "uz", languageName: "O'zbek", premium: true, description: "Yumshoq ayol ovozi" },
+    
+    { id: "madi", name: "Madi", gender: "male", language: "kk", languageName: "Қазақ", premium: true, description: "Қазақ ер дауысы" },
+    
+    { id: "aylin", name: "Aylin", gender: "female", language: "tr", languageName: "Türkçe", premium: true, description: "Türk kadın sesi" },
+    
+    { id: "dasha", name: "Даша", gender: "female", language: "ru", languageName: "Русский", premium: true, description: "Профессиональный диктор" },
+    { id: "julia", name: "Юлия", gender: "female", language: "ru", languageName: "Русский", premium: true, description: "Элегантный женский голос" },
+    { id: "lera", name: "Лера", gender: "female", language: "ru", languageName: "Русский", premium: true, description: "Молодежный женский голос" },
+    { id: "alexander", name: "Александр", gender: "male", language: "ru", languageName: "Русский", premium: true, description: "Глубокий мужской голос" },
+  ];
+
+  const filteredVoices = voices.filter(v => v.language === selectedLanguage);
+  
   const characterCount = text.length;
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
 
@@ -58,6 +85,58 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
   }[user.plan];
 
   const canGenerate = characterCount > 0 && characterCount <= maxCharacters;
+
+  const handleTranslate = async (targetLang: string) => {
+    if (!text.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Введите текст для перевода",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsTranslating(true);
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/21cfebb4-0617-4d35-bb9a-b99cd72e3912', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          targetLanguage: targetLang,
+          sourceLanguage: 'auto'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.translated_text) {
+        setText(data.translated_text);
+        setSelectedLanguage(targetLang);
+        
+        const voicesForLang = voices.filter(v => v.language === targetLang && !v.premium);
+        if (voicesForLang.length > 0) {
+          setSelectedVoice(voicesForLang[0].id);
+        }
+        
+        toast({
+          title: "Перевод готов!",
+          description: `Текст переведён на ${languages.find(l => l.code === targetLang)?.name}`
+        });
+      } else {
+        throw new Error(data.error || 'Ошибка перевода');
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось перевести текст",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!canGenerate) {
@@ -90,7 +169,6 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
           text,
           voice: selectedVoice,
           speed: speed[0],
-          pitch: pitch[0],
           format,
           userId: user.id
         })
@@ -177,10 +255,30 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Icon name="FileText" size={20} />
-                  Текст для озвучки
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="FileText" size={20} />
+                    Текст для озвучки
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground">Язык:</Label>
+                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                      <SelectTrigger className="w-[160px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            <span className="flex items-center gap-2">
+                              <span>{lang.flag}</span>
+                              <span>{lang.name}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Textarea
@@ -189,9 +287,25 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                   onChange={(e) => setText(e.target.value)}
                   className="min-h-[200px] text-base"
                 />
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Символов: {characterCount} / {maxCharacters === Infinity ? '∞' : maxCharacters}</span>
-                  <span>Слов: {wordCount}</span>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    <span>Символов: {characterCount} / {maxCharacters === Infinity ? '∞' : maxCharacters}</span>
+                    <span className="ml-4">Слов: {wordCount}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Select onValueChange={handleTranslate} disabled={isTranslating || !text.trim()}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Перевести на..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.filter(l => l.code !== selectedLanguage).map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            {lang.flag} {lang.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -200,7 +314,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Icon name="Mic2" size={20} />
-                  Выбор голоса
+                  Выбор голоса ({filteredVoices.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -212,7 +326,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                   </TabsList>
                   <TabsContent value="all" className="mt-4">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {voices.map((voice) => (
+                      {filteredVoices.map((voice) => (
                         <button
                           key={voice.id}
                           onClick={() => setSelectedVoice(voice.id)}
@@ -235,7 +349,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                   </TabsContent>
                   <TabsContent value="male" className="mt-4">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {voices.filter(v => v.gender === 'male').map((voice) => (
+                      {filteredVoices.filter(v => v.gender === 'male').map((voice) => (
                         <button
                           key={voice.id}
                           onClick={() => setSelectedVoice(voice.id)}
@@ -258,7 +372,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                   </TabsContent>
                   <TabsContent value="female" className="mt-4">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {voices.filter(v => v.gender === 'female').map((voice) => (
+                      {filteredVoices.filter(v => v.gender === 'female').map((voice) => (
                         <button
                           key={voice.id}
                           onClick={() => setSelectedVoice(voice.id)}
@@ -328,21 +442,6 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                   <Slider
                     value={speed}
                     onValueChange={setSpeed}
-                    min={0.5}
-                    max={2.0}
-                    step={0.1}
-                    disabled={user.plan === 'free'}
-                  />
-                  {user.plan === 'free' && (
-                    <p className="text-xs text-muted-foreground">Доступно на платных тарифах</p>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <Label>Высота тона: {pitch[0].toFixed(1)}x</Label>
-                  <Slider
-                    value={pitch}
-                    onValueChange={setPitch}
                     min={0.5}
                     max={2.0}
                     step={0.1}
