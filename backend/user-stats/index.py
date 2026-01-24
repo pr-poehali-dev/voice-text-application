@@ -65,7 +65,7 @@ def handler(event: dict, context) -> dict:
         
         # Получаем информацию о пользователе и его использовании
         cur.execute("""
-            SELECT plan, characters_used, avatar_url
+            SELECT plan, characters_used, avatar_url, usage_reset_date
             FROM users
             WHERE id = %s
         """, (int(user_id),))
@@ -81,6 +81,23 @@ def handler(event: dict, context) -> dict:
             user_plan = user_row[0] if user_row[0] else 'free'
             characters_used = user_row[1] if user_row[1] else 0
             avatar_url = user_row[2]
+            last_reset = user_row[3]
+            
+            # Проверяем, нужно ли сбросить счетчик (если начался новый месяц)
+            from datetime import datetime
+            current_date = datetime.now().date()
+            
+            if last_reset:
+                # Если текущий месяц отличается от месяца последнего сброса
+                if current_date.month != last_reset.month or current_date.year != last_reset.year:
+                    # Сбрасываем счетчик использованных символов
+                    cur.execute("""
+                        UPDATE users
+                        SET characters_used = 0, usage_reset_date = CURRENT_DATE
+                        WHERE id = %s
+                    """, (int(user_id),))
+                    conn.commit()
+                    characters_used = 0
         
         # Получаем статистику пользователя
         cur.execute("""

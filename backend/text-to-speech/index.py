@@ -223,6 +223,29 @@ def handler(event: dict, context) -> dict:
                     conn = psycopg2.connect(dsn)
                     cur = conn.cursor()
                     
+                    # Проверяем и сбрасываем лимит если начался новый месяц
+                    cur.execute("""
+                        SELECT usage_reset_date, characters_used
+                        FROM users
+                        WHERE id = %s
+                    """, (user_id,))
+                    
+                    user_data = cur.fetchone()
+                    if user_data:
+                        last_reset = user_data[0]
+                        current_date = datetime.now().date()
+                        
+                        # Если прошел месяц с последнего сброса, сбрасываем счетчик
+                        if last_reset:
+                            from datetime import date
+                            # Проверяем, что текущий месяц больше месяца последнего сброса
+                            if current_date.month != last_reset.month or current_date.year != last_reset.year:
+                                cur.execute("""
+                                    UPDATE users
+                                    SET characters_used = 0, usage_reset_date = CURRENT_DATE
+                                    WHERE id = %s
+                                """, (user_id,))
+                    
                     # Генерируем название проекта из первых слов текста
                     title_words = text.split()[:5]
                     title = ' '.join(title_words) + ('...' if len(text.split()) > 5 else '')
