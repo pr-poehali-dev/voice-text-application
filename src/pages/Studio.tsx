@@ -222,8 +222,13 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
         setAudioUrl(data.audio_url);
         toast({
           title: "Готово!",
-          description: "Аудио успешно создано"
+          description: "Аудио успешно создано и сохранено в ваших проектах"
         });
+        
+        // Перезагружаем страницу через 1.5 секунды чтобы обновить статистику
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } else {
         throw new Error(data.error || 'Ошибка генерации');
       }

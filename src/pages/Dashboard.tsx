@@ -12,6 +12,10 @@ interface UserStats {
   total_characters: number;
   total_projects: number;
   total_audio_duration: number;
+  characters_used: number;
+  character_limit: number;
+  characters_remaining: number;
+  avatar_url: string | null;
 }
 
 interface Project {
@@ -32,7 +36,11 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
     total_generations: 0,
     total_characters: 0,
     total_projects: 0,
-    total_audio_duration: 0
+    total_audio_duration: 0,
+    characters_used: 0,
+    character_limit: 0,
+    characters_remaining: 0,
+    avatar_url: null
   });
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +58,12 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
       if (response.ok) {
         setStats(data.stats);
         setProjects(data.projects);
+        
+        // Обновляем avatarUrl в user если он изменился
+        if (data.stats.avatar_url && data.stats.avatar_url !== user.avatarUrl) {
+          const updatedUser = { ...user, avatarUrl: data.stats.avatar_url };
+          localStorage.setItem('voiceAppUser', JSON.stringify(updatedUser));
+        }
       }
     } catch (error) {
       console.error('Failed to fetch user data:', error);
@@ -99,12 +113,13 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
     free: { name: "Бесплатный", limit: 5000, color: "bg-gray-100 text-gray-700" },
     basic: { name: "Базовый", limit: 50000, color: "bg-blue-100 text-blue-700" },
     pro: { name: "Профи", limit: 300000, color: "bg-purple-100 text-purple-700" },
-    unlimited: { name: "Безлимит", limit: Infinity, color: "bg-yellow-100 text-yellow-700" }
+    unlimited: { name: "Безлимит", limit: -1, color: "bg-yellow-100 text-yellow-700" }
   };
 
   const currentPlan = planDetails[user.plan];
-  const usedCharacters = stats.total_characters;
-  const usagePercentage = currentPlan.limit === Infinity ? 0 : (usedCharacters / currentPlan.limit) * 100;
+  const usedCharacters = stats.characters_used;
+  const characterLimit = stats.character_limit > 0 ? stats.character_limit : Infinity;
+  const usagePercentage = characterLimit === Infinity ? 0 : (usedCharacters / characterLimit) * 100;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -115,6 +130,14 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
               <Icon name="Volume2" size={24} className="text-primary-foreground" />
             </div>
             <span className="text-xl font-bold">VoiceAI</span>
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+            {stats.avatar_url && (
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                <img src={stats.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+              </div>
+            )}
+            <span className="text-sm font-medium">{user.name}</span>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => onNavigate('studio')}>
@@ -215,15 +238,19 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
                 <div className={`p-4 rounded-lg ${currentPlan.color}`}>
                   <div className="font-semibold text-lg">{currentPlan.name}</div>
                   <div className="text-sm mt-1">
-                    {currentPlan.limit === Infinity ? 'Без ограничений' : `${currentPlan.limit.toLocaleString()} символов/мес`}
+                    {characterLimit === Infinity ? 'Без ограничений' : `${characterLimit.toLocaleString()} символов/мес`}
                   </div>
                 </div>
 
-                {currentPlan.limit !== Infinity && (
+                {characterLimit !== Infinity && (
                   <div>
                     <div className="flex justify-between mb-2 text-sm">
                       <span className="text-muted-foreground">Использовано</span>
-                      <span className="font-semibold">{usedCharacters.toLocaleString()} / {currentPlan.limit.toLocaleString()}</span>
+                      <span className="font-semibold">{usedCharacters.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between mb-2 text-sm">
+                      <span className="text-muted-foreground">Осталось</span>
+                      <span className="font-semibold text-green-600">{stats.characters_remaining.toLocaleString()}</span>
                     </div>
                     <Progress value={usagePercentage} className="h-2" />
                   </div>

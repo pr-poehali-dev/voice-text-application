@@ -14,6 +14,7 @@ export interface User {
   role: 'user' | 'admin';
   plan: 'free' | 'basic' | 'pro' | 'unlimited';
   balance: number;
+  avatarUrl?: string;
 }
 
 const Index = () => {

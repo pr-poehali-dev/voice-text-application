@@ -244,6 +244,13 @@ def handler(event: dict, context) -> dict:
                             total_audio_duration = user_stats.total_audio_duration + %s
                     """, (user_id, len(text), audio_duration, len(text), audio_duration))
                     
+                    # Обновляем использованные символы пользователя
+                    cur.execute("""
+                        UPDATE users 
+                        SET characters_used = characters_used + %s
+                        WHERE id = %s
+                    """, (len(text), user_id))
+                    
                     conn.commit()
                     cur.close()
                     conn.close()

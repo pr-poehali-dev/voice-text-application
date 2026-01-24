@@ -17,7 +17,9 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
   const [confirmPassword, setConfirmPassword] = useState("");
   const [speechkitKey, setSpeechkitKey] = useState("");
   const [translateKey, setTranslateKey] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || '');
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const { toast } = useToast();
 
   const planNames = {
@@ -105,6 +107,73 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, выберите файл изображения",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Ошибка",
+        description: "Размер файла не должен превышать 5 МБ",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Image = reader.result as string;
+
+        const response = await fetch('https://functions.poehali.dev/e3b68528-1cc7-40ad-ba15-d09bbb44f10d', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            image: base64Image
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.avatar_url) {
+          setAvatarUrl(data.avatar_url);
+          const updatedUser = { ...user, avatarUrl: data.avatar_url };
+          localStorage.setItem('voiceAppUser', JSON.stringify(updatedUser));
+          
+          toast({
+            title: "Успешно",
+            description: "Аватар обновлен",
+          });
+        } else {
+          throw new Error(data.error || 'Ошибка загрузки');
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось загрузить аватар",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -199,6 +268,46 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <Label>Аватар</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <Icon name="User" size={48} className="text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <Input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarUpload}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isUploadingAvatar}
+                        onClick={() => document.getElementById('avatar-upload')?.click()}
+                      >
+                        {isUploadingAvatar ? (
+                          <>
+                            <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
+                            Загрузка...
+                          </>
+                        ) : (
+                          <>
+                            <Icon name="Upload" size={16} className="mr-2" />
+                            Загрузить фото
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="name">Имя</Label>
                   <Input
