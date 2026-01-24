@@ -3,9 +3,50 @@ import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Subscription = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "quarterly" | "yearly">("monthly");
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handlePayment = async (planName: string, amount: number) => {
+    setProcessingPlan(planName);
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount.toFixed(2),
+          plan_name: `${planName} - ${billingPeriod === 'monthly' ? 'месяц' : billingPeriod === 'quarterly' ? 'квартал' : 'год'}`,
+          return_url: window.location.href
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.confirmation_url) {
+        toast({
+          title: "Перенаправление на оплату",
+          description: "Открываем форму ЮKassa...",
+        });
+        window.location.href = data.confirmation_url;
+      } else {
+        throw new Error(data.error || 'Ошибка создания платежа');
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось создать платёж",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingPlan(null);
+    }
+  };
 
   const plans = [
     {
@@ -141,8 +182,20 @@ const Subscription = ({ onNavigate }: { onNavigate: (page: string) => void }) =>
                 </div>
               </CardHeader>
               <CardContent>
-                <Button className={`w-full mb-6 ${plan.popular ? '' : 'variant-outline'}`} size="lg">
-                  {plan.popular ? "Начать сейчас" : "Выбрать план"}
+                <Button 
+                  className={`w-full mb-6 ${plan.popular ? '' : 'variant-outline'}`} 
+                  size="lg"
+                  onClick={() => handlePayment(plan.name, plan.price[billingPeriod])}
+                  disabled={processingPlan === plan.name}
+                >
+                  {processingPlan === plan.name ? (
+                    <>
+                      <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                      Обработка...
+                    </>
+                  ) : (
+                    plan.popular ? "Начать сейчас" : "Выбрать план"
+                  )}
                 </Button>
                 <ul className="space-y-3">
                   {plan.features.map((feature, i) => (
