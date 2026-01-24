@@ -41,10 +41,37 @@ def handler(event: dict, context) -> dict:
     try:
         body = json.loads(event.get('body', '{}'))
         text = body.get('text', '').strip()
-        voice = body.get('voice', 'alena')
+        voice_input = body.get('voice', 'alena')
         speed = body.get('speed', 1.0)
         format_type = body.get('format', 'mp3')
         user_id = body.get('userId')
+        
+        # Маппинг имён голосов на реальные идентификаторы Yandex API
+        voice_map = {
+            # Премиум голоса
+            'dasha': 'dasha',
+            'julia': 'julia',
+            'lera': 'lera',
+            'alexander': 'alexander',
+            # Бесплатные голоса
+            'alena': 'alena',
+            'filipp': 'filipp',
+            'ermil': 'ermil',
+            'jane': 'jane',
+            'omazh': 'omazh',
+            'zahar': 'zahar',
+            'john': 'john',
+            'jane-en': 'jane',
+            'madirus': 'madirus',
+            'lea': 'lea',
+            'bruno': 'bruno',
+            'amira': 'amira',
+            'nigora': 'nigora',
+            'madi': 'madi',
+            'aylin': 'aylin'
+        }
+        
+        voice = voice_map.get(voice_input, voice_input)
         
         if not text:
             return {
