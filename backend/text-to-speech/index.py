@@ -57,14 +57,14 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
         
-        if len(text) > 50000:
+        if len(text) > 4000:
             return {
                 'statusCode': 400,
                 'headers': {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 },
-                'body': json.dumps({'error': 'Текст слишком длинный (максимум 50000 символов)'}),
+                'body': json.dumps({'error': 'Текст слишком длинный (максимум 4000 символов). Разбейте на несколько частей.'}),
                 'isBase64Encoded': False
             }
         
@@ -123,7 +123,7 @@ def handler(event: dict, context) -> dict:
             
             return chunks
         
-        text_chunks = split_text(text, max_chars=1000)
+        text_chunks = split_text(text, max_chars=500)
         audio_chunks = []
         
         # Синтезируем каждую часть
@@ -137,7 +137,7 @@ def handler(event: dict, context) -> dict:
                 'folderId': folder_id
             }
             
-            response = requests.post(url, headers=headers, data=data, timeout=25)
+            response = requests.post(url, headers=headers, data=data, timeout=10)
             
             if response.status_code != 200:
                 error_text = response.text
