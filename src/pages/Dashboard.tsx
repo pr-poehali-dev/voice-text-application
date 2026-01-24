@@ -48,6 +48,16 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
 
   useEffect(() => {
     fetchUserData();
+    
+    // Проверяем уведомление о сбросе лимита
+    const limitResetNotification = localStorage.getItem('limitResetNotification');
+    if (limitResetNotification === 'true') {
+      toast({
+        title: "🎉 Лимит обновлен!",
+        description: "Начался новый месяц — ваш лимит символов был обнулен",
+      });
+      localStorage.removeItem('limitResetNotification');
+    }
   }, [user.id]);
 
   const fetchUserData = async () => {

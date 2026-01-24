@@ -220,6 +220,12 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
 
       if (response.ok && data.audio_url) {
         setAudioUrl(data.audio_url);
+        
+        // Проверяем был ли сброс лимита
+        if (data.limit_reset) {
+          localStorage.setItem('limitResetNotification', 'true');
+        }
+        
         toast({
           title: "Готово!",
           description: "Аудио успешно создано и сохранено в ваших проектах"

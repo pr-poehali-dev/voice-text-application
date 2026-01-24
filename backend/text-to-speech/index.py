@@ -216,6 +216,7 @@ def handler(event: dict, context) -> dict:
         audio_duration = int((word_count / 2.5) / speed)
         
         # Сохраняем проект и обновляем статистику
+        limit_was_reset = False
         if user_id:
             try:
                 dsn = os.environ.get('DATABASE_URL')
@@ -245,6 +246,7 @@ def handler(event: dict, context) -> dict:
                                     SET characters_used = 0, usage_reset_date = CURRENT_DATE
                                     WHERE id = %s
                                 """, (user_id,))
+                                limit_was_reset = True
                     
                     # Генерируем название проекта из первых слов текста
                     title_words = text.split()[:5]
@@ -291,7 +293,8 @@ def handler(event: dict, context) -> dict:
                 'format': format_type,
                 'character_count': len(text),
                 'voice': voice,
-                'audio_duration': audio_duration
+                'audio_duration': audio_duration,
+                'limit_reset': limit_was_reset
             }),
             'isBase64Encoded': False
         }

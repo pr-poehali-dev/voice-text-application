@@ -136,35 +136,56 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
 
     try {
       const reader = new FileReader();
+      
       reader.onloadend = async () => {
-        const base64Image = reader.result as string;
+        try {
+          const base64Image = reader.result as string;
 
-        const response = await fetch('https://functions.poehali.dev/e3b68528-1cc7-40ad-ba15-d09bbb44f10d', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: user.id,
-            image: base64Image
-          })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.avatar_url) {
-          setAvatarUrl(data.avatar_url);
-          const updatedUser = { ...user, avatarUrl: data.avatar_url };
-          localStorage.setItem('voiceAppUser', JSON.stringify(updatedUser));
-          
-          toast({
-            title: "Успешно",
-            description: "Аватар обновлен",
+          const response = await fetch('https://functions.poehali.dev/e3b68528-1cc7-40ad-ba15-d09bbb44f10d', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              image: base64Image
+            })
           });
-        } else {
-          throw new Error(data.error || 'Ошибка загрузки');
+
+          const data = await response.json();
+
+          if (response.ok && data.avatar_url) {
+            setAvatarUrl(data.avatar_url);
+            const updatedUser = { ...user, avatarUrl: data.avatar_url };
+            localStorage.setItem('voiceAppUser', JSON.stringify(updatedUser));
+            
+            toast({
+              title: "Успешно",
+              description: "Аватар обновлен",
+            });
+          } else {
+            throw new Error(data.error || 'Ошибка загрузки');
+          }
+        } catch (err) {
+          toast({
+            title: "Ошибка",
+            description: err instanceof Error ? err.message : "Не удалось загрузить аватар",
+            variant: "destructive",
+          });
+        } finally {
+          setIsUploadingAvatar(false);
         }
       };
+      
+      reader.onerror = () => {
+        toast({
+          title: "Ошибка",
+          description: "Не удалось прочитать файл",
+          variant: "destructive",
+        });
+        setIsUploadingAvatar(false);
+      };
+      
       reader.readAsDataURL(file);
     } catch (error) {
       toast({
@@ -172,7 +193,6 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
         description: error instanceof Error ? error.message : "Не удалось загрузить аватар",
         variant: "destructive",
       });
-    } finally {
       setIsUploadingAvatar(false);
     }
   };

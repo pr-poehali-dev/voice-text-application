@@ -115,18 +115,29 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
         
-        conn = psycopg2.connect(dsn)
-        cur = conn.cursor()
-        
-        cur.execute("""
-            UPDATE users
-            SET avatar_url = %s, updated_at = CURRENT_TIMESTAMP
-            WHERE id = %s
-        """, (avatar_url, user_id))
-        
-        conn.commit()
-        cur.close()
-        conn.close()
+        try:
+            conn = psycopg2.connect(dsn)
+            cur = conn.cursor()
+            
+            cur.execute("""
+                UPDATE users
+                SET avatar_url = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """, (avatar_url, int(user_id)))
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as db_error:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': f'Database error: {str(db_error)}'}),
+                'isBase64Encoded': False
+            }
         
         return {
             'statusCode': 200,
