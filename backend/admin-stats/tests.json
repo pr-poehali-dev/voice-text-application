@@ -1,0 +1,21 @@
+{
+  "tests": [
+    {
+      "name": "Проверка OPTIONS для CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Получение статистики",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "total_users": "number",
+        "total_generations": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

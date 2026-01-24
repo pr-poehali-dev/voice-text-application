@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Icon from "@/components/ui/icon";
 import { useToast } from "@/hooks/use-toast";
@@ -20,19 +22,39 @@ interface AdminUser {
   total_generations: number;
 }
 
+interface AdminStats {
+  total_users: number;
+  active_users: number;
+  users_today: number;
+  generations_today: number;
+  total_generations: number;
+  total_characters: number;
+  total_audio_hours: number;
+  top_users: Array<{id: number; name: string; email: string; generations: number; characters: number}>;
+  plan_stats: Record<string, number>;
+  activity: Array<{date: string; count: number}>;
+}
+
 const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [newPlan, setNewPlan] = useState<string>('');
   const [newRole, setNewRole] = useState<string>('');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserPlan, setNewUserPlan] = useState('free');
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
+    fetchStats();
   }, []);
 
   const fetchUsers = async () => {
@@ -52,6 +74,19 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/d8226be4-73c4-4b3c-b3af-423231e920d7');
+      const data = await response.json();
+
+      if (response.ok) {
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
     }
   };
 
@@ -154,10 +189,61 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
 
       setShowDeleteDialog(false);
       fetchUsers();
+      fetchStats();
     } catch (error) {
       toast({
         title: "Ошибка",
         description: "Не удалось удалить пользователя",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddUser = async () => {
+    if (!newUserName || !newUserEmail || !newUserPassword) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните все поля",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/fc8cc205-a9e9-4f9d-b4f3-5921b5c6743d', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newUserName,
+          email: newUserEmail,
+          password: newUserPassword,
+          plan: newUserPlan,
+          role: 'user'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Успешно",
+          description: "Пользователь создан"
+        });
+
+        setShowAddDialog(false);
+        setNewUserName('');
+        setNewUserEmail('');
+        setNewUserPassword('');
+        setNewUserPlan('free');
+        fetchUsers();
+        fetchStats();
+      } else {
+        throw new Error(data.error || 'Ошибка создания');
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось создать пользователя",
         variant: "destructive"
       });
     }
@@ -182,9 +268,10 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
     unlimited: 'Безлимит'
   };
 
-  const totalUsers = users.length;
-  const activeUsers = users.filter(u => u.role !== 'blocked').length;
-  const totalGenerations = users.reduce((sum, u) => sum + u.total_generations, 0);
+  const totalUsers = stats?.total_users || users.length;
+  const activeUsers = stats?.active_users || users.filter(u => u.role !== 'blocked').length;
+  const totalGenerations = stats?.total_generations || users.reduce((sum, u) => sum + u.total_generations, 0);
+  const generationsToday = stats?.generations_today || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -255,8 +342,8 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Всего озвучек</p>
-                  <p className="text-2xl font-bold">{totalGenerations.toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Озвучек за сутки</p>
+                  <p className="text-2xl font-bold">{generationsToday.toLocaleString()}</p>
                 </div>
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                   <Icon name="Volume2" size={24} className="text-purple-600" />
@@ -269,11 +356,11 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Заблокировано</p>
-                  <p className="text-2xl font-bold">{users.filter(u => u.role === 'blocked').length}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Всего озвучек</p>
+                  <p className="text-2xl font-bold">{totalGenerations.toLocaleString()}</p>
                 </div>
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Icon name="Ban" size={24} className="text-red-600" />
+                  <Icon name="TrendingUp" size={24} className="text-orange-600" />
                 </div>
               </div>
             </CardContent>
@@ -282,10 +369,16 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icon name="Users" size={20} />
-              Управление пользователями
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Icon name="Users" size={20} />
+                Управление пользователями
+              </CardTitle>
+              <Button onClick={() => setShowAddDialog(true)}>
+                <Icon name="UserPlus" size={16} className="mr-2" />
+                Добавить пользователя
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -380,6 +473,81 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
             )}
           </CardContent>
         </Card>
+
+        {/* Системные настройки и топ пользователей */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon name="Settings" size={20} />
+                Системные настройки
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => onNavigate('settings')}
+              >
+                <Icon name="Key" size={18} className="mr-2" />
+                API ключи
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => onNavigate('pricing')}
+              >
+                <Icon name="CreditCard" size={18} className="mr-2" />
+                Управление тарифами
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => window.location.reload()}
+              >
+                <Icon name="RefreshCw" size={18} className="mr-2" />
+                Обновить данные
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon name="TrendingUp" size={20} />
+                Топ пользователей
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stats?.top_users && stats.top_users.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.top_users.map((topUser, index) => (
+                    <div key={topUser.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{topUser.name}</p>
+                          <p className="text-xs text-muted-foreground">{topUser.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">{topUser.characters.toLocaleString()} симв.</p>
+                        <p className="text-xs text-muted-foreground">{topUser.generations} озвучек</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Icon name="Users" size={48} className="mx-auto mb-2 opacity-50" />
+                  <p>Нет данных</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Диалог редактирования */}
@@ -473,6 +641,72 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
             </Button>
             <Button variant="destructive" onClick={handleDeleteUser}>
               Удалить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Диалог добавления пользователя */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Добавить нового пользователя</DialogTitle>
+            <DialogDescription>
+              Создание учетной записи для нового пользователя
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-name">Имя</Label>
+              <Input
+                id="new-name"
+                type="text"
+                placeholder="Введите имя"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-email">Email</Label>
+              <Input
+                id="new-email"
+                type="email"
+                placeholder="email@example.com"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Пароль</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Минимум 6 символов"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-plan">Тарифный план</Label>
+              <Select value={newUserPlan} onValueChange={setNewUserPlan}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Бесплатный</SelectItem>
+                  <SelectItem value="basic">Базовый</SelectItem>
+                  <SelectItem value="pro">Профи</SelectItem>
+                  <SelectItem value="unlimited">Безлимит</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              Отмена
+            </Button>
+            <Button onClick={handleAddUser}>
+              Создать
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -38,8 +38,76 @@ def handler(event: dict, context) -> dict:
         conn = psycopg2.connect(dsn)
         cur = conn.cursor()
         
+        # POST - создать нового пользователя
+        if method == 'POST':
+            body = json.loads(event.get('body', '{}'))
+            name = body.get('name')
+            email = body.get('email')
+            password = body.get('password')
+            plan = body.get('plan', 'free')
+            role = body.get('role', 'user')
+            
+            if not name or not email or not password:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': 'name, email and password are required'}),
+                    'isBase64Encoded': False
+                }
+            
+            # Проверяем существует ли пользователь с таким email
+            cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+            if cur.fetchone():
+                cur.close()
+                conn.close()
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': 'User with this email already exists'}),
+                    'isBase64Encoded': False
+                }
+            
+            # Простое хеширование пароля (в продакшене нужен bcrypt)
+            import hashlib
+            password_hash = hashlib.sha256(password.encode()).hexdigest()
+            
+            # Создаем пользователя
+            cur.execute("""
+                INSERT INTO users (name, email, password_hash, plan, role)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
+            """, (name, email, password_hash, plan, role))
+            
+            user_id = cur.fetchone()[0]
+            
+            # Создаем запись статистики
+            cur.execute("""
+                INSERT INTO user_stats (user_id, total_generations, total_characters, total_projects, total_audio_duration)
+                VALUES (%s, 0, 0, 0, 0)
+            """, (user_id,))
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'success': True, 'userId': user_id}),
+                'isBase64Encoded': False
+            }
+        
         # GET - получить список всех пользователей
-        if method == 'GET':
+        elif method == 'GET':
             cur.execute("""
                 SELECT 
                     u.id, 
