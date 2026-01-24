@@ -1,44 +1,65 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Landing from "./Landing";
 import Auth from "./Auth";
+import Studio from "./Studio";
 import Dashboard from "./Dashboard";
-import Subscription from "./Subscription";
-import Profile from "./Profile";
-import Admin from "./Admin";
+import AdminPanel from "./AdminPanel";
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: 'user' | 'admin';
+  plan: 'free' | 'basic' | 'pro' | 'unlimited';
+  balance: number;
+}
 
 const Index = () => {
-  const [currentPage, setCurrentPage] = useState<"landing" | "auth" | "dashboard" | "subscription" | "profile" | "admin">("landing");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentPage, setCurrentPage] = useState<"landing" | "auth" | "studio" | "dashboard" | "admin">("landing");
+  const [user, setUser] = useState<User | null>(null);
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    setCurrentPage("dashboard");
+  useEffect(() => {
+    const savedUser = localStorage.getItem('voiceAppUser');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      setCurrentPage('studio');
+    }
+  }, []);
+
+  const handleLogin = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem('voiceAppUser', JSON.stringify(userData));
+    setCurrentPage(userData.role === 'admin' ? 'admin' : 'studio');
   };
 
-  const handleNavigate = (page: "landing" | "auth" | "dashboard" | "subscription" | "profile" | "admin") => {
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('voiceAppUser');
+    setCurrentPage('landing');
+  };
+
+  const handleNavigate = (page: "landing" | "auth" | "studio" | "dashboard" | "admin") => {
     setCurrentPage(page);
   };
 
-  if (!isLoggedIn && currentPage === "landing") {
+  if (!user && currentPage === "landing") {
     return <Landing onNavigate={handleNavigate} />;
   }
 
-  if (!isLoggedIn && currentPage === "auth") {
-    return <Auth onLogin={handleLogin} />;
+  if (!user && currentPage === "auth") {
+    return <Auth onLogin={handleLogin} onNavigate={handleNavigate} />;
   }
 
-  if (isLoggedIn) {
+  if (user) {
     switch (currentPage) {
+      case "studio":
+        return <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
       case "dashboard":
-        return <Dashboard onNavigate={handleNavigate} />;
-      case "subscription":
-        return <Subscription onNavigate={handleNavigate} />;
-      case "profile":
-        return <Profile onNavigate={handleNavigate} />;
+        return <Dashboard user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
       case "admin":
-        return <Admin onNavigate={handleNavigate} />;
+        return user.role === 'admin' ? <AdminPanel user={user} onNavigate={handleNavigate} onLogout={handleLogout} /> : <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
       default:
-        return <Dashboard onNavigate={handleNavigate} />;
+        return <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
     }
   }
 

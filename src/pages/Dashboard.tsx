@@ -1,49 +1,67 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import type { User } from "./Index";
 
-const Dashboard = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
+const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
   const stats = [
-    { title: "Активные проекты", value: "12", change: "+2", icon: "Briefcase", trend: "up" },
-    { title: "Пользователи", value: "1,234", change: "+18%", icon: "Users", trend: "up" },
-    { title: "Доход за месяц", value: "₽145,000", change: "+12%", icon: "TrendingUp", trend: "up" },
-    { title: "Хранилище", value: "67%", change: "8.1 GB", icon: "Database", trend: "neutral" },
+    { title: "Озвучек создано", value: "24", icon: "Volume2", color: "text-blue-600" },
+    { title: "Символов использовано", value: "12,450", icon: "FileText", color: "text-purple-600" },
+    { title: "Проектов", value: "8", icon: "FolderOpen", color: "text-green-600" },
+    { title: "Часов аудио", value: "2.5", icon: "Clock", color: "text-orange-600" },
   ];
 
-  const recentActivity = [
-    { action: "Новый пользователь зарегистрирован", time: "2 мин назад", type: "user" },
-    { action: "Подписка продлена", time: "15 мин назад", type: "payment" },
-    { action: "Проект создан", time: "1 час назад", type: "project" },
-    { action: "Отчёт сформирован", time: "2 часа назад", type: "report" },
+  const recentProjects = [
+    { name: "Видеоурок по маркетингу", voice: "Алёна", date: "Сегодня, 14:30", duration: "5:23", status: "completed" },
+    { name: "Озвучка для подкаста", voice: "Филипп", date: "Вчера, 18:45", duration: "12:15", status: "completed" },
+    { name: "Реклама продукта", voice: "Даша", date: "2 дня назад", duration: "0:45", status: "completed" },
   ];
+
+  const planDetails = {
+    free: { name: "Бесплатный", limit: 5000, color: "bg-gray-100 text-gray-700" },
+    basic: { name: "Базовый", limit: 50000, color: "bg-blue-100 text-blue-700" },
+    pro: { name: "Профи", limit: 300000, color: "bg-purple-100 text-purple-700" },
+    unlimited: { name: "Безлимит", limit: Infinity, color: "bg-yellow-100 text-yellow-700" }
+  };
+
+  const currentPlan = planDetails[user.plan];
+  const usedCharacters = 12450;
+  const usagePercentage = currentPlan.limit === Infinity ? 0 : (usedCharacters / currentPlan.limit) * 100;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-sidebar text-sidebar-foreground shadow-sm">
+      <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Icon name="Zap" size={24} className="text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">SaaS Platform</span>
-          </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
-              <Icon name="Bell" size={18} />
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <Icon name="Volume2" size={24} className="text-primary-foreground" />
+            </div>
+            <span className="text-xl font-bold">VoiceAI</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => onNavigate('studio')}>
+              <Icon name="Mic2" size={18} className="mr-2" />
+              Студия
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => onNavigate('profile')} className="text-sidebar-foreground hover:bg-sidebar-accent">
-              <Icon name="User" size={18} />
+            {user.role === 'admin' && (
+              <Button variant="ghost" size="sm" onClick={() => onNavigate('admin')}>
+                <Icon name="Settings" size={18} className="mr-2" />
+                Админка
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={onLogout}>
+              <Icon name="LogOut" size={18} />
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Панель управления</h1>
-          <p className="text-muted-foreground">Обзор ключевых показателей вашего бизнеса</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Личный кабинет</h1>
+          <p className="text-muted-foreground">Привет, {user.name}! Вот статистика вашего аккаунта</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -53,18 +71,12 @@ const Dashboard = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Icon name={stat.icon} size={20} className="text-primary" />
+                <div className={`w-10 h-10 bg-${stat.color}/10 rounded-lg flex items-center justify-center`}>
+                  <Icon name={stat.icon} size={20} className={stat.color} />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground mb-1">{stat.value}</div>
-                <div className="flex items-center gap-1">
-                  {stat.trend === "up" && <Icon name="TrendingUp" size={14} className="text-green-600" />}
-                  <span className={`text-xs ${stat.trend === "up" ? "text-green-600" : "text-muted-foreground"}`}>
-                    {stat.change} от прошлого месяца
-                  </span>
-                </div>
+                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
               </CardContent>
             </Card>
           ))}
@@ -74,93 +86,99 @@ const Dashboard = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Icon name="Activity" size={20} />
-                Последняя активность
+                <Icon name="History" size={20} />
+                Последние проекты
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Icon 
-                        name={activity.type === "user" ? "UserPlus" : activity.type === "payment" ? "CreditCard" : activity.type === "project" ? "FolderPlus" : "FileText"} 
-                        size={18} 
-                        className="text-primary" 
-                      />
+                {recentProjects.map((project, index) => (
+                  <div key={index} className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors border">
+                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Icon name="Play" size={20} className="text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      <p className="text-sm font-semibold text-foreground">{project.name}</p>
+                      <p className="text-xs text-muted-foreground">Голос: {project.voice} • {project.duration}</p>
+                      <p className="text-xs text-muted-foreground">{project.date}</p>
                     </div>
-                    <Badge variant="outline" className="text-xs">{activity.type}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm">
+                        <Icon name="Download" size={16} />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Icon name="Share2" size={16} />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
+              <Button variant="outline" className="w-full mt-4">
+                <Icon name="FolderOpen" size={16} className="mr-2" />
+                Все проекты
+              </Button>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon name="Target" size={20} />
-                Быстрые действия
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button className="w-full justify-start" variant="outline" onClick={() => onNavigate('subscription')}>
-                <Icon name="Crown" size={18} className="mr-2" />
-                Управление подпиской
-              </Button>
-              <Button className="w-full justify-start" variant="outline" onClick={() => onNavigate('admin')}>
-                <Icon name="Settings" size={18} className="mr-2" />
-                Настройки системы
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <Icon name="Download" size={18} className="mr-2" />
-                Скачать отчёт
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <Icon name="BarChart3" size={18} className="mr-2" />
-                Аналитика
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Crown" size={20} />
+                  Ваш тариф
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className={`p-4 rounded-lg ${currentPlan.color}`}>
+                  <div className="font-semibold text-lg">{currentPlan.name}</div>
+                  <div className="text-sm mt-1">
+                    {currentPlan.limit === Infinity ? 'Без ограничений' : `${currentPlan.limit.toLocaleString()} символов/мес`}
+                  </div>
+                </div>
+
+                {currentPlan.limit !== Infinity && (
+                  <div>
+                    <div className="flex justify-between mb-2 text-sm">
+                      <span className="text-muted-foreground">Использовано</span>
+                      <span className="font-semibold">{usedCharacters.toLocaleString()} / {currentPlan.limit.toLocaleString()}</span>
+                    </div>
+                    <Progress value={usagePercentage} className="h-2" />
+                  </div>
+                )}
+
+                {user.plan !== 'unlimited' && (
+                  <Button className="w-full">
+                    <Icon name="Sparkles" size={16} className="mr-2" />
+                    Улучшить тариф
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Zap" size={20} />
+                  Быстрые действия
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button variant="outline" className="w-full justify-start" onClick={() => onNavigate('studio')}>
+                  <Icon name="Plus" size={18} className="mr-2" />
+                  Новая озвучка
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Icon name="Download" size={18} className="mr-2" />
+                  Скачать все проекты
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Icon name="Settings" size={18} className="mr-2" />
+                  Настройки аккаунта
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icon name="Package" size={20} />
-              Использование ресурсов
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium">API запросы</span>
-                  <span className="text-sm text-muted-foreground">7,500 / 10,000</span>
-                </div>
-                <Progress value={75} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium">Хранилище</span>
-                  <span className="text-sm text-muted-foreground">8.1 GB / 12 GB</span>
-                </div>
-                <Progress value={67} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium">Пропускная способность</span>
-                  <span className="text-sm text-muted-foreground">234 GB / 500 GB</span>
-                </div>
-                <Progress value={47} className="h-2" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

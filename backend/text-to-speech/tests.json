@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Проверка OPTIONS для CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedHeaders": {
+        "Access-Control-Allow-Origin": "*"
+      }
+    },
+    {
+      "name": "Синтез короткого текста",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "text": "Привет, это тестовая озвучка!",
+        "voice": "alena",
+        "speed": 1.0,
+        "format": "mp3",
+        "userId": 1
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "audio_url": "string",
+        "format": "mp3",
+        "character_count": "number",
+        "voice": "alena"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

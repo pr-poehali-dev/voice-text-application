@@ -1,157 +1,228 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Icon from "@/components/ui/icon";
+import { useToast } from "@/hooks/use-toast";
+import type { User } from "./Index";
 
-const Auth = ({ onLogin }: { onLogin: () => void }) => {
+const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNavigate: (page: string) => void }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  const [registerName, setRegisterName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    if (loginEmail === 'admin@voiceai.ru' && loginPassword === 'admin123') {
+      const adminUser: User = {
+        id: 1,
+        email: 'admin@voiceai.ru',
+        name: 'Администратор',
+        role: 'admin',
+        plan: 'unlimited',
+        balance: 0
+      };
+      
+      toast({
+        title: "Добро пожаловать!",
+        description: "Вход выполнен как администратор"
+      });
+      
+      setTimeout(() => {
+        onLogin(adminUser);
+        setIsLoading(false);
+      }, 500);
+      return;
+    }
+
     setTimeout(() => {
+      const mockUser: User = {
+        id: 2,
+        email: loginEmail,
+        name: loginEmail.split('@')[0],
+        role: 'user',
+        plan: 'free',
+        balance: 0
+      };
+
+      toast({
+        title: "Добро пожаловать!",
+        description: "Вход выполнен успешно"
+      });
+
+      onLogin(mockUser);
       setIsLoading(false);
-      onLogin();
+    }, 1000);
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    setTimeout(() => {
+      const newUser: User = {
+        id: Date.now(),
+        email: registerEmail,
+        name: registerName,
+        role: 'user',
+        plan: 'free',
+        balance: 0
+      };
+
+      toast({
+        title: "Регистрация успешна!",
+        description: "Добро пожаловать в VoiceAI"
+      });
+
+      onLogin(newUser);
+      setIsLoading(false);
     }, 1000);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sidebar to-sidebar/90 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg">
-            <Icon name="Zap" size={32} className="text-primary-foreground" />
+          <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Icon name="Volume2" size={32} className="text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">SaaS Platform</h1>
-          <p className="text-white/80">Профессиональное решение для вашего бизнеса</p>
+          <h1 className="text-3xl font-bold mb-2">VoiceAI</h1>
+          <p className="text-muted-foreground">Профессиональная озвучка текста</p>
         </div>
 
-        <Card className="shadow-2xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Добро пожаловать</CardTitle>
-            <CardDescription className="text-center">
-              Войдите или создайте новый аккаунт
-            </CardDescription>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onNavigate('landing')}
+              className="absolute top-4 right-4"
+            >
+              <Icon name="X" size={18} />
+            </Button>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+            <Tabs defaultValue="login">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Вход</TabsTrigger>
                 <TabsTrigger value="register">Регистрация</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="name@company.com" 
+                    <Label htmlFor="loginEmail">Email</Label>
+                    <Input
+                      id="loginEmail"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
                       required
-                      className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Пароль</Label>
-                      <Button variant="link" className="p-0 h-auto text-xs">
-                        Забыли пароль?
-                      </Button>
-                    </div>
-                    <Input 
-                      id="password" 
-                      type="password" 
+                    <Label htmlFor="loginPassword">Пароль</Label>
+                    <Input
+                      id="loginPassword"
+                      type="password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
                       required
-                      className="h-11"
                     />
                   </div>
-                  <Button type="submit" className="w-full h-11" disabled={isLoading}>
-                    {isLoading ? "Вход..." : "Войти"}
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                        Входим...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="LogIn" size={18} className="mr-2" />
+                        Войти
+                      </>
+                    )}
                   </Button>
+                  
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-900">
+                    <p className="font-semibold mb-1">Тестовый доступ администратора:</p>
+                    <p className="text-xs">Email: admin@voiceai.ru</p>
+                    <p className="text-xs">Пароль: admin123</p>
+                  </div>
                 </form>
               </TabsContent>
 
               <TabsContent value="register">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="reg-name">Полное имя</Label>
-                    <Input 
-                      id="reg-name" 
-                      type="text" 
-                      placeholder="Иван Иванов" 
+                    <Label htmlFor="registerName">Имя</Label>
+                    <Input
+                      id="registerName"
+                      type="text"
+                      placeholder="Ваше имя"
+                      value={registerName}
+                      onChange={(e) => setRegisterName(e.target.value)}
                       required
-                      className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="reg-email">Email</Label>
-                    <Input 
-                      id="reg-email" 
-                      type="email" 
-                      placeholder="name@company.com" 
+                    <Label htmlFor="registerEmail">Email</Label>
+                    <Input
+                      id="registerEmail"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
                       required
-                      className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="reg-password">Пароль</Label>
-                    <Input 
-                      id="reg-password" 
-                      type="password" 
+                    <Label htmlFor="registerPassword">Пароль</Label>
+                    <Input
+                      id="registerPassword"
+                      type="password"
+                      value={registerPassword}
+                      onChange={(e) => setRegisterPassword(e.target.value)}
                       required
-                      className="h-11"
+                      minLength={6}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-password-confirm">Подтвердите пароль</Label>
-                    <Input 
-                      id="reg-password-confirm" 
-                      type="password" 
-                      required
-                      className="h-11"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full h-11" disabled={isLoading}>
-                    {isLoading ? "Регистрация..." : "Создать аккаунт"}
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                        Создаём аккаунт...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="UserPlus" size={18} className="mr-2" />
+                        Зарегистрироваться
+                      </>
+                    )}
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Или продолжите с</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 mt-6">
-                <Button variant="outline" className="h-11">
-                  <Icon name="Mail" size={18} className="mr-2" />
-                  Google
-                </Button>
-                <Button variant="outline" className="h-11">
-                  <Icon name="Github" size={18} className="mr-2" />
-                  GitHub
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
-        <p className="text-center text-white/60 text-sm mt-6">
-          Продолжая, вы соглашаетесь с{" "}
-          <Button variant="link" className="p-0 h-auto text-white/80">
-            условиями использования
+        <div className="text-center mt-6">
+          <Button variant="link" onClick={() => onNavigate('landing')}>
+            <Icon name="ArrowLeft" size={16} className="mr-2" />
+            Вернуться на главную
           </Button>
-        </p>
+        </div>
       </div>
     </div>
   );
