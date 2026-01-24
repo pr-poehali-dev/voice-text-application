@@ -275,13 +275,17 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
             </Badge>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => onNavigate('settings')}>
+              <Icon name="Settings" size={18} className="mr-2" />
+              API ключи
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard')}>
               <Icon name="LayoutDashboard" size={18} className="mr-2" />
               Кабинет
             </Button>
             {user.role === 'admin' && (
               <Button variant="ghost" size="sm" onClick={() => onNavigate('admin')}>
-                <Icon name="Settings" size={18} className="mr-2" />
+                <Icon name="Shield" size={18} className="mr-2" />
                 Админка
               </Button>
             )}
