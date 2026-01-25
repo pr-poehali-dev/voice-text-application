@@ -1,10 +1,10 @@
 {
+  "manage-project": "https://functions.poehali.dev/b4ac418f-9a78-41d9-9a00-68f1eb7d3979",
   "delete-project": "https://functions.poehali.dev/a6bc55c1-4b0b-4672-8b96-aef4c611e9ea",
   "admin-stats": "https://functions.poehali.dev/d8226be4-73c4-4b3c-b3af-423231e920d7",
   "admin-users": "https://functions.poehali.dev/fc8cc205-a9e9-4f9d-b4f3-5921b5c6743d",
   "upload-avatar": "https://functions.poehali.dev/e3b68528-1cc7-40ad-ba15-d09bbb44f10d",
   "user-stats": "https://functions.poehali.dev/e0dc4626-43ba-410e-b95b-f6d0859c3bdb",
-  "detect-language": "https://functions.poehali.dev/c454dbcf-7093-4694-ba09-19d92e95974d",
   "translate": "https://functions.poehali.dev/21cfebb4-0617-4d35-bb9a-b99cd72e3912",
   "text-to-speech": "https://functions.poehali.dev/8d288713-243e-43b4-9efe-f5e77747a468",
   "payment": "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8",

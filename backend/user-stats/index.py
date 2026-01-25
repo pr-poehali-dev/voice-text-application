@@ -146,7 +146,7 @@ def handler(event: dict, context) -> dict:
         
         # Получаем последние 10 проектов
         cur.execute("""
-            SELECT id, name, text, audio_url, voice_name, speed, format, character_count, duration, created_at
+            SELECT id, name, text, audio_url, voice_name, speed, format, character_count, duration, created_at, is_favorite
             FROM projects
             WHERE user_id = %s
             ORDER BY created_at DESC
@@ -167,7 +167,8 @@ def handler(event: dict, context) -> dict:
                 'format': row[6],
                 'character_count': row[7],
                 'audio_duration': row[8],
-                'created_at': row[9].isoformat() if row[9] else None
+                'created_at': row[9].isoformat() if row[9] else None,
+                'is_favorite': row[10] if row[10] is not None else False
             })
         
         cur.close()

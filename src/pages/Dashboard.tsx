@@ -29,6 +29,7 @@ interface Project {
   character_count: number;
   audio_duration: number;
   created_at: string;
+  is_favorite: boolean;
 }
 
 const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
@@ -46,6 +47,9 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
   const [isLoading, setIsLoading] = useState(true);
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [viewingText, setViewingText] = useState<{ id: number; text: string } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -179,6 +183,96 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
     }
   };
 
+  const handleToggleFavorite = async (projectId: number, currentFavorite: boolean) => {
+    try {
+      const response = await fetch(`https://functions.poehali.dev/b4ac418f-9a78-41d9-9a00-68f1eb7d3979`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          projectId, 
+          userId: user.id, 
+          action: 'toggle_favorite',
+          isFavorite: !currentFavorite 
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setProjects(projects.map(p => 
+          p.id === projectId ? { ...p, is_favorite: !currentFavorite } : p
+        ));
+        toast({
+          title: !currentFavorite ? "Добавлено в избранное" : "Удалено из избранного"
+        });
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : 'Не удалось обновить избранное',
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleStartRename = (projectId: number, currentName: string) => {
+    setEditingId(projectId);
+    setEditingName(currentName);
+  };
+
+  const handleSaveRename = async (projectId: number) => {
+    if (!editingName.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Название не может быть пустым",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://functions.poehali.dev/b4ac418f-9a78-41d9-9a00-68f1eb7d3979`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          projectId, 
+          userId: user.id, 
+          action: 'rename',
+          newName: editingName.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setProjects(projects.map(p => 
+          p.id === projectId ? { ...p, title: editingName.trim() } : p
+        ));
+        setEditingId(null);
+        setEditingName("");
+        toast({
+          title: "Переименовано",
+          description: `Новое название: ${editingName.trim()}`
+        });
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : 'Не удалось переименовать',
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCancelRename = () => {
+    setEditingId(null);
+    setEditingName("");
+  };
+
   const statsData = [
     { title: "Озвучек создано", value: stats.total_generations.toString(), icon: "Volume2", color: "text-blue-600" },
     { title: "Символов использовано", value: stats.total_characters.toLocaleString('ru'), icon: "FileText", color: "text-purple-600" },
@@ -197,6 +291,8 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
   const usedCharacters = stats.characters_used;
   const characterLimit = stats.character_limit > 0 ? stats.character_limit : Infinity;
   const usagePercentage = characterLimit === Infinity ? 0 : (usedCharacters / characterLimit) * 100;
+
+  const favoriteProjects = projects.filter(p => p.is_favorite);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -290,13 +386,52 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
                         <Icon name={playingId === project.id ? "Pause" : "Play"} size={20} className="text-primary" />
                       </button>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{project.title}</p>
+                        {editingId === project.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="text-sm font-semibold px-2 py-1 border rounded flex-1"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveRename(project.id);
+                                if (e.key === 'Escape') handleCancelRename();
+                              }}
+                            />
+                            <Button size="sm" variant="ghost" onClick={() => handleSaveRename(project.id)}>
+                              <Icon name="Check" size={16} />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={handleCancelRename}>
+                              <Icon name="X" size={16} />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-foreground truncate">{project.title}</p>
+                            {project.is_favorite && <Icon name="Star" size={14} className="text-yellow-500 fill-yellow-500 flex-shrink-0" />}
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground">Голос: {project.voice} • {formatDuration(project.audio_duration)}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(project.created_at)}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Button variant="ghost" size="sm" onClick={() => handlePlay(project.id, project.audio_url)} title="Воспроизвести">
                           <Icon name={playingId === project.id ? "Pause" : "Play"} size={16} />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setViewingText({ id: project.id, text: project.text })} title="Просмотр текста">
+                          <Icon name="FileText" size={16} />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleToggleFavorite(project.id, project.is_favorite)}
+                          title={project.is_favorite ? "Убрать из избранного" : "Добавить в избранное"}
+                        >
+                          <Icon name="Star" size={16} className={project.is_favorite ? "fill-yellow-500 text-yellow-500" : ""} />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleStartRename(project.id, project.title)} title="Переименовать">
+                          <Icon name="Edit2" size={16} />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDownload(project.audio_url, project.title)} title="Скачать">
                           <Icon name="Download" size={16} />
@@ -313,6 +448,78 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
           </Card>
 
           <div className="space-y-6">
+            {favoriteProjects.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="Star" size={20} className="text-yellow-500" />
+                    Избранное
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {favoriteProjects.map((project) => (
+                      <div key={project.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                        <div className="flex items-start gap-3">
+                          <button
+                            onClick={() => handlePlay(project.id, project.audio_url)}
+                            className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-primary/20 transition-colors mt-0.5"
+                          >
+                            <Icon name={playingId === project.id ? "Pause" : "Play"} size={16} className="text-primary" />
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            {editingId === project.id ? (
+                              <div className="flex items-center gap-1 mb-1">
+                                <input
+                                  type="text"
+                                  value={editingName}
+                                  onChange={(e) => setEditingName(e.target.value)}
+                                  className="text-sm font-medium px-2 py-0.5 border rounded w-full"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveRename(project.id);
+                                    if (e.key === 'Escape') handleCancelRename();
+                                  }}
+                                />
+                                <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => handleSaveRename(project.id)}>
+                                  <Icon name="Check" size={12} />
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={handleCancelRename}>
+                                  <Icon name="X" size={12} />
+                                </Button>
+                              </div>
+                            ) : (
+                              <p className="text-sm font-medium text-foreground truncate mb-1">{project.title}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mb-1">{project.voice} • {formatDuration(project.audio_duration)}</p>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setViewingText({ id: project.id, text: project.text })}>
+                                <Icon name="FileText" size={12} />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => handleStartRename(project.id, project.title)}>
+                                <Icon name="Edit2" size={12} />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => handleDownload(project.audio_url, project.title)}>
+                                <Icon name="Download" size={12} />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 px-2"
+                                onClick={() => handleToggleFavorite(project.id, project.is_favorite)}
+                              >
+                                <Icon name="Star" size={12} className="fill-yellow-500 text-yellow-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -376,6 +583,27 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
           </div>
         </div>
       </div>
+
+      {viewingText && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setViewingText(null)}>
+          <Card className="max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <CardHeader className="border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="FileText" size={20} />
+                  Текст озвучки
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setViewingText(null)}>
+                  <Icon name="X" size={18} />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 overflow-y-auto max-h-[60vh]">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed">{viewingText.text}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

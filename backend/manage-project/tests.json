@@ -1,0 +1,57 @@
+{
+  "tests": [
+    {
+      "name": "Toggle favorite",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "projectId": 1,
+        "userId": 1,
+        "action": "toggle_favorite",
+        "isFavorite": true
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Rename project",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "projectId": 1,
+        "userId": 1,
+        "action": "rename",
+        "newName": "Новое название"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "new_name": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Missing action",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "projectId": 1,
+        "userId": 1
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "OPTIONS request",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
