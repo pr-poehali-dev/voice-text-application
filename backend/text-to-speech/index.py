@@ -49,21 +49,18 @@ def handler(event: dict, context) -> dict:
         
         # Маппинг имён голосов на реальные идентификаторы Yandex API
         voice_map = {
-            # Премиум голоса
-            'dasha': 'dasha',
-            'julia': 'julia',
-            'lera': 'lera',
-            'alexander': 'alexander',
-            # Бесплатные голоса
+            # Бесплатные голоса (русский)
             'alena': 'alena',
             'filipp': 'filipp',
             'ermil': 'ermil',
             'jane': 'jane',
             'omazh': 'omazh',
             'zahar': 'zahar',
+            # Английский
             'john': 'john',
             'jane-en': 'jane',
             'madirus': 'madirus',
+            # Другие языки
             'lea': 'lea',
             'bruno': 'bruno',
             'amira': 'amira',

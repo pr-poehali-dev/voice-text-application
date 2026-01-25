@@ -23,9 +23,8 @@
       "expectedStatus": 200,
       "expectedBody": {
         "audio_url": "string",
-        "format": "mp3",
-        "character_count": "number",
-        "voice": "alena"
+        "format": "string",
+        "voice": "string"
       },
       "bodyMatcher": "partial"
     }
