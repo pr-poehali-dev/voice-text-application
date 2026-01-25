@@ -44,6 +44,8 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
   });
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [playingId, setPlayingId] = useState<number | null>(null);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -110,6 +112,71 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handlePlay = (projectId: number, audioUrl: string) => {
+    if (playingId === projectId && audioElement) {
+      // Пауза если уже играет
+      audioElement.pause();
+      setPlayingId(null);
+      setAudioElement(null);
+    } else {
+      // Остановить предыдущий если играет
+      if (audioElement) {
+        audioElement.pause();
+      }
+      
+      // Запустить новый
+      const audio = new Audio(audioUrl);
+      audio.play();
+      setPlayingId(projectId);
+      setAudioElement(audio);
+      
+      // Сбросить состояние когда закончится
+      audio.onended = () => {
+        setPlayingId(null);
+        setAudioElement(null);
+      };
+    }
+  };
+
+  const handleDelete = async (projectId: number, projectTitle: string) => {
+    if (!confirm(`Удалить озвучку "${projectTitle}"?`)) return;
+
+    try {
+      const response = await fetch(`https://functions.poehali.dev/a6bc55c1-4b0b-4672-8b96-aef4c611e9ea`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, userId: user.id })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Успешно удалено",
+          description: `Озвучка "${projectTitle}" удалена`
+        });
+        
+        // Обновить список проектов
+        setProjects(projects.filter(p => p.id !== projectId));
+        
+        // Остановить если это играло
+        if (playingId === projectId && audioElement) {
+          audioElement.pause();
+          setPlayingId(null);
+          setAudioElement(null);
+        }
+      } else {
+        throw new Error(data.error || 'Ошибка удаления');
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : 'Не удалось удалить проект',
+        variant: "destructive"
+      });
+    }
   };
 
   const statsData = [
@@ -216,17 +283,26 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
                 ) : (
                   projects.map((project) => (
                     <div key={project.id} className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors border">
-                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Icon name="Play" size={20} className="text-primary" />
-                      </div>
+                      <button
+                        onClick={() => handlePlay(project.id, project.audio_url)}
+                        className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-primary/20 transition-colors"
+                      >
+                        <Icon name={playingId === project.id ? "Pause" : "Play"} size={20} className="text-primary" />
+                      </button>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">{project.title}</p>
                         <p className="text-xs text-muted-foreground">Голос: {project.voice} • {formatDuration(project.audio_duration)}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(project.created_at)}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleDownload(project.audio_url, project.title)}>
+                        <Button variant="ghost" size="sm" onClick={() => handlePlay(project.id, project.audio_url)} title="Воспроизвести">
+                          <Icon name={playingId === project.id ? "Pause" : "Play"} size={16} />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDownload(project.audio_url, project.title)} title="Скачать">
                           <Icon name="Download" size={16} />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(project.id, project.title)} className="text-destructive hover:text-destructive" title="Удалить">
+                          <Icon name="Trash2" size={16} />
                         </Button>
                       </div>
                     </div>

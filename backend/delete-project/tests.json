@@ -1,0 +1,37 @@
+{
+  "tests": [
+    {
+      "name": "Missing parameters",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "userId": 1
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Project not found",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "projectId": 99999,
+        "userId": 1
+      },
+      "expectedStatus": 404,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "OPTIONS request",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
