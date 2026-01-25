@@ -71,6 +71,12 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
       const response = await fetch(`https://functions.poehali.dev/e0dc4626-43ba-410e-b95b-f6d0859c3bdb?userId=${user.id}`);
       const data = await response.json();
 
+      console.log('📊 Получены данные с сервера:', { 
+        projects_count: data.projects?.length, 
+        stats: data.stats,
+        projects: data.projects 
+      });
+
       if (response.ok) {
         setStats(data.stats);
         setProjects(data.projects);
