@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Icon from "@/components/ui/icon";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "./Index";
@@ -50,6 +51,8 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserPlan, setNewUserPlan] = useState('free');
+  const [recognizedText, setRecognizedText] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -309,6 +312,19 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
           <p className="text-muted-foreground">Управление пользователями и системой VoiceAI</p>
         </div>
 
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="mb-8">
+            <TabsTrigger value="users">
+              <Icon name="Users" size={16} className="mr-2" />
+              Пользователи
+            </TabsTrigger>
+            <TabsTrigger value="studio2">
+              <Icon name="Mic" size={16} className="mr-2" />
+              Студия №2
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="pt-6">
@@ -548,6 +564,150 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
             </CardContent>
           </Card>
         </div>
+          </TabsContent>
+
+          <TabsContent value="studio2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Mic" size={20} />
+                  Студия №2: Распознавание речи
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Нажмите на микрофон и начните говорить. Текст будет распознаваться в реальном времени.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex justify-center">
+                    <Button
+                      size="lg"
+                      variant={isListening ? "destructive" : "default"}
+                      className="w-32 h-32 rounded-full"
+                      onClick={() => {
+                        if (isListening) {
+                          setIsListening(false);
+                          toast({
+                            title: 'Остановлено',
+                            description: 'Распознавание речи остановлено'
+                          });
+                        } else {
+                          if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                            toast({
+                              title: 'Не поддерживается',
+                              description: 'Ваш браузер не поддерживает распознавание речи',
+                              variant: 'destructive'
+                            });
+                            return;
+                          }
+
+                          const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                          const recognition = new SpeechRecognition();
+                          
+                          recognition.lang = 'ru-RU';
+                          recognition.continuous = true;
+                          recognition.interimResults = true;
+
+                          recognition.onstart = () => {
+                            setIsListening(true);
+                            toast({
+                              title: 'Слушаю...',
+                              description: 'Начните говорить'
+                            });
+                          };
+
+                          recognition.onresult = (event: any) => {
+                            let finalTranscript = '';
+                            let interimTranscript = '';
+
+                            for (let i = event.resultIndex; i < event.results.length; i++) {
+                              const transcript = event.results[i][0].transcript;
+                              if (event.results[i].isFinal) {
+                                finalTranscript += transcript + ' ';
+                              } else {
+                                interimTranscript += transcript;
+                              }
+                            }
+
+                            if (finalTranscript) {
+                              setRecognizedText(prev => (prev + ' ' + finalTranscript).trim());
+                            }
+                          };
+
+                          recognition.onerror = (event: any) => {
+                            setIsListening(false);
+                            toast({
+                              title: 'Ошибка',
+                              description: 'Произошла ошибка при распознавании',
+                              variant: 'destructive'
+                            });
+                          };
+
+                          recognition.onend = () => {
+                            setIsListening(false);
+                          };
+
+                          recognition.start();
+                        }
+                      }}
+                    >
+                      <Icon 
+                        name={isListening ? "MicOff" : "Mic"} 
+                        size={48} 
+                        className={isListening ? "animate-pulse" : ""}
+                      />
+                    </Button>
+                  </div>
+
+                  <div className="text-center">
+                    <p className="text-sm font-medium">
+                      {isListening ? '🔴 Идёт запись...' : 'Нажмите на микрофон чтобы начать'}
+                    </p>
+                  </div>
+
+                  {recognizedText && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Распознанный текст</Label>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(recognizedText);
+                              toast({
+                                title: 'Скопировано',
+                                description: 'Текст скопирован в буфер обмена'
+                              });
+                            }}
+                          >
+                            <Icon name="Copy" size={16} className="mr-2" />
+                            Копировать
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setRecognizedText('')}
+                          >
+                            <Icon name="Trash2" size={16} className="mr-2" />
+                            Очистить
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-muted rounded-lg min-h-32">
+                        <p className="text-sm whitespace-pre-wrap">{recognizedText}</p>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Icon name="FileText" size={14} />
+                        Символов: {recognizedText.length} • Слов: {recognizedText.trim().split(/\s+/).filter(Boolean).length}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Диалог редактирования */}
