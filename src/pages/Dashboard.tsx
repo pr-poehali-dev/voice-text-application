@@ -71,24 +71,25 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
       const response = await fetch(`https://functions.poehali.dev/e0dc4626-43ba-410e-b95b-f6d0859c3bdb?userId=${user.id}`);
       const data = await response.json();
 
-      console.log('📊 Получены данные с сервера:', { 
-        projects_count: data.projects?.length, 
-        stats: data.stats,
-        projects: data.projects 
-      });
-
       if (response.ok) {
+        console.log('✅ Данные успешно получены:', {
+          'Всего проектов': data.projects?.length || 0,
+          'Избранных': data.projects?.filter((p: Project) => p.is_favorite).length || 0,
+          'Проекты': data.projects
+        });
         setStats(data.stats);
-        setProjects(data.projects);
+        setProjects(data.projects || []);
         
         // Обновляем avatarUrl в user если он изменился
         if (data.stats.avatar_url && data.stats.avatar_url !== user.avatarUrl) {
           const updatedUser = { ...user, avatarUrl: data.stats.avatar_url };
           localStorage.setItem('voiceAppUser', JSON.stringify(updatedUser));
         }
+      } else {
+        console.error('❌ Ошибка при загрузке данных:', data);
       }
     } catch (error) {
-      console.error('Failed to fetch user data:', error);
+      console.error('❌ Сетевая ошибка:', error);
     } finally {
       setIsLoading(false);
     }
