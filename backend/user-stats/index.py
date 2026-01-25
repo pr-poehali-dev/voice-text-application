@@ -146,7 +146,7 @@ def handler(event: dict, context) -> dict:
         
         # Получаем последние 10 проектов
         cur.execute("""
-            SELECT id, title, text, audio_url, voice, speed, format, character_count, audio_duration, created_at
+            SELECT id, name, text, audio_url, voice_name, speed, format, character_count, duration, created_at
             FROM projects
             WHERE user_id = %s
             ORDER BY created_at DESC

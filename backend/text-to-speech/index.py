@@ -236,55 +236,55 @@ def handler(event: dict, context) -> dict:
                     FROM users
                     WHERE id = %s
                 """, (user_id,))
+                
+                user_data = cur.fetchone()
+                if user_data:
+                    last_reset = user_data[0]
+                    current_date = datetime.now().date()
                     
-                    user_data = cur.fetchone()
-                    if user_data:
-                        last_reset = user_data[0]
-                        current_date = datetime.now().date()
-                        
-                        # Если прошел месяц с последнего сброса, сбрасываем счетчик
-                        if last_reset:
-                            from datetime import date
-                            # Проверяем, что текущий месяц больше месяца последнего сброса
-                            if current_date.month != last_reset.month or current_date.year != last_reset.year:
-                                cur.execute("""
-                                    UPDATE users
-                                    SET characters_used = 0, usage_reset_date = CURRENT_DATE
-                                    WHERE id = %s
-                                """, (user_id,))
-                                limit_was_reset = True
-                    
-                    # Генерируем название проекта из первых слов текста
-                    title_words = text.split()[:5]
-                    title = ' '.join(title_words) + ('...' if len(text.split()) > 5 else '')
-                    
-                    # Сохраняем проект
-                    cur.execute("""
-                        INSERT INTO projects (user_id, title, text, audio_url, voice, speed, format, character_count, audio_duration)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (user_id, title, text, cdn_url, voice, speed, format_type, len(text), audio_duration))
-                    
-                    # Обновляем статистику пользователя
-                    cur.execute("""
-                        INSERT INTO user_stats (user_id, total_generations, total_characters, total_projects, total_audio_duration)
-                        VALUES (%s, 1, %s, 1, %s)
-                        ON CONFLICT (user_id) DO UPDATE SET
-                            total_generations = user_stats.total_generations + 1,
-                            total_characters = user_stats.total_characters + %s,
-                            total_projects = user_stats.total_projects + 1,
-                            total_audio_duration = user_stats.total_audio_duration + %s
-                    """, (user_id, len(text), audio_duration, len(text), audio_duration))
-                    
-                    # Обновляем использованные символы пользователя
-                    cur.execute("""
-                        UPDATE users 
-                        SET characters_used = characters_used + %s
-                        WHERE id = %s
-                    """, (len(text), user_id))
-                    
-                    conn.commit()
-                    cur.close()
-                    conn.close()
+                    # Если прошел месяц с последнего сброса, сбрасываем счетчик
+                    if last_reset:
+                        from datetime import date
+                        # Проверяем, что текущий месяц больше месяца последнего сброса
+                        if current_date.month != last_reset.month or current_date.year != last_reset.year:
+                            cur.execute("""
+                                UPDATE users
+                                SET characters_used = 0, usage_reset_date = CURRENT_DATE
+                                WHERE id = %s
+                            """, (user_id,))
+                            limit_was_reset = True
+                
+                # Генерируем название проекта из первых слов текста
+                title_words = text.split()[:5]
+                project_name = ' '.join(title_words) + ('...' if len(text.split()) > 5 else '')
+                
+                # Сохраняем проект
+                cur.execute("""
+                    INSERT INTO projects (user_id, name, text, audio_url, voice_id, voice_name, speed, pitch, format, character_count, duration, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (user_id, project_name, text, cdn_url, voice, voice, speed, 1.0, format_type, len(text), audio_duration, 'completed'))
+                
+                # Обновляем статистику пользователя
+                cur.execute("""
+                    INSERT INTO user_stats (user_id, total_generations, total_characters, total_projects, total_audio_duration)
+                    VALUES (%s, 1, %s, 1, %s)
+                    ON CONFLICT (user_id) DO UPDATE SET
+                        total_generations = user_stats.total_generations + 1,
+                        total_characters = user_stats.total_characters + %s,
+                        total_projects = user_stats.total_projects + 1,
+                        total_audio_duration = user_stats.total_audio_duration + %s
+                """, (user_id, len(text), audio_duration, len(text), audio_duration))
+                
+                # Обновляем использованные символы пользователя
+                cur.execute("""
+                    UPDATE users 
+                    SET characters_used = characters_used + %s
+                    WHERE id = %s
+                """, (len(text), user_id))
+                
+                conn.commit()
+                cur.close()
+                conn.close()
             except Exception as db_error:
                 print(f'Database error: {db_error}')
                 return {
