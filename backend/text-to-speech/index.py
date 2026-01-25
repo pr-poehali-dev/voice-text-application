@@ -56,6 +56,9 @@ def handler(event: dict, context) -> dict:
             'jane': 'jane',
             'omazh': 'omazh',
             'zahar': 'zahar',
+            # Премиум нейронные голоса (русский)
+            'alena_premium': 'alena',
+            'filipp_premium': 'filipp',
             # Английский
             'john': 'john',
             'jane-en': 'jane',

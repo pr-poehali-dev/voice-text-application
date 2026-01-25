@@ -66,6 +66,9 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
     { id: "madi", name: "Madi", gender: "male", language: "kk", languageName: "Қазақ", premium: true, description: "Қазақ ер дауысы" },
     
     { id: "aylin", name: "Aylin", gender: "female", language: "tr", languageName: "Türkçe", premium: true, description: "Türk kadın sesi" },
+    
+    { id: "alena_premium", name: "Алёна Premium", gender: "female", language: "ru", languageName: "Русский", premium: true, description: "Нейронный женский голос" },
+    { id: "filipp_premium", name: "Филипп Premium", gender: "male", language: "ru", languageName: "Русский", premium: true, description: "Нейронный мужской голос" },
   ];
 
   const filteredVoices = voices.filter(v => v.language === selectedLanguage);
