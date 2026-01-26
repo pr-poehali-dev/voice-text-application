@@ -154,12 +154,6 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
                       </>
                     )}
                   </Button>
-                  
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-900">
-                    <p className="font-semibold mb-1">Тестовый доступ администратора:</p>
-                    <p className="text-xs">Email: admin@voiceai.ru</p>
-                    <p className="text-xs">Пароль: admin123</p>
-                  </div>
                 </form>
               </TabsContent>
 
