@@ -132,7 +132,22 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="loginPassword">Пароль</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="loginPassword">Пароль</Label>
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="h-auto p-0 text-xs"
+                        onClick={() => {
+                          toast({
+                            title: "Восстановление пароля",
+                            description: "Функция находится в разработке"
+                          });
+                        }}
+                      >
+                        Забыли пароль?
+                      </Button>
+                    </div>
                     <Input
                       id="loginPassword"
                       type="password"
