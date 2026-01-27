@@ -5,6 +5,7 @@ import Icon from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import WalletWidget from "@/components/WalletWidget";
 import NotificationBell from "@/components/NotificationBell";
 import type { User } from "./Index";
@@ -35,6 +36,7 @@ interface Project {
 }
 
 const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
+  const { t } = useLanguage();
   const [stats, setStats] = useState<UserStats>({
     total_generations: 0,
     total_characters: 0,
@@ -185,8 +187,8 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
       }
     } catch (error) {
       toast({
-        title: "Ошибка",
-        description: error instanceof Error ? error.message : 'Не удалось удалить проект',
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("dashboard.delete_error"),
         variant: "destructive"
       });
     }
@@ -212,15 +214,15 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
           p.id === projectId ? { ...p, is_favorite: !currentFavorite } : p
         ));
         toast({
-          title: !currentFavorite ? "Добавлено в избранное" : "Удалено из избранного"
+          title: !currentFavorite ? t("dashboard.added_to_favorites") : t("dashboard.removed_from_favorites")
         });
       } else {
         throw new Error(data.error);
       }
     } catch (error) {
       toast({
-        title: "Ошибка",
-        description: error instanceof Error ? error.message : 'Не удалось обновить избранное',
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("dashboard.favorite_error"),
         variant: "destructive"
       });
     }
@@ -234,8 +236,8 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
   const handleSaveRename = async (projectId: number) => {
     if (!editingName.trim()) {
       toast({
-        title: "Ошибка",
-        description: "Название не может быть пустым",
+        title: t("common.error"),
+        description: t("dashboard.name_empty_error"),
         variant: "destructive"
       });
       return;

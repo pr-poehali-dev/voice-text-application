@@ -6,11 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Icon from "@/components/ui/icon";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import type { User } from "./Index";
 
 const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNavigate: (page: string) => void }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -34,8 +36,8 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
       };
       
       toast({
-        title: "Добро пожаловать!",
-        description: "Вход выполнен как администратор"
+        title: t("auth.welcome_toast"),
+        description: t("auth.welcome_admin")
       });
       
       setTimeout(() => {
@@ -56,8 +58,8 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
       };
 
       toast({
-        title: "Добро пожаловать!",
-        description: "Вход выполнен успешно"
+        title: t("auth.welcome_toast"),
+        description: t("auth.welcome_success")
       });
 
       onLogin(mockUser);
@@ -80,8 +82,8 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
       };
 
       toast({
-        title: "Регистрация успешна!",
-        description: "Добро пожаловать в VoiceAI"
+        title: t("auth.register_success"),
+        description: t("auth.register_welcome")
       });
 
       onLogin(newUser);
@@ -96,8 +98,8 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
           <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
             <Icon name="Volume2" size={32} className="text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">VoiceAI</h1>
-          <p className="text-muted-foreground">Профессиональная озвучка текста</p>
+          <h1 className="text-3xl font-bold mb-2">{t("app.name")}</h1>
+          <p className="text-muted-foreground">{t("auth.subtitle")}</p>
         </div>
 
         <Card>
@@ -114,18 +116,18 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
           <CardContent>
             <Tabs defaultValue="login">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Вход</TabsTrigger>
-                <TabsTrigger value="register">Регистрация</TabsTrigger>
+                <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
+                <TabsTrigger value="register">{t("auth.register")}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="loginEmail">Email</Label>
+                    <Label htmlFor="loginEmail">{t("auth.email")}</Label>
                     <Input
                       id="loginEmail"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder={t("auth.email_placeholder")}
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
@@ -133,19 +135,19 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="loginPassword">Пароль</Label>
+                      <Label htmlFor="loginPassword">{t("auth.password")}</Label>
                       <Button
                         type="button"
                         variant="link"
                         className="h-auto p-0 text-xs"
                         onClick={() => {
                           toast({
-                            title: "Восстановление пароля",
-                            description: "Функция находится в разработке"
+                            title: t("auth.forgot_title"),
+                            description: t("auth.forgot_in_dev")
                           });
                         }}
                       >
-                        Забыли пароль?
+                        {t("auth.forgot_password")}
                       </Button>
                     </div>
                     <Input
@@ -160,12 +162,12 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
                     {isLoading ? (
                       <>
                         <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
-                        Входим...
+                        {t("auth.login_progress")}
                       </>
                     ) : (
                       <>
                         <Icon name="LogIn" size={18} className="mr-2" />
-                        Войти
+                        {t("auth.login_button")}
                       </>
                     )}
                   </Button>
@@ -175,29 +177,29 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="registerName">Имя</Label>
+                    <Label htmlFor="registerName">{t("auth.name")}</Label>
                     <Input
                       id="registerName"
                       type="text"
-                      placeholder="Ваше имя"
+                      placeholder={t("auth.name_placeholder")}
                       value={registerName}
                       onChange={(e) => setRegisterName(e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="registerEmail">Email</Label>
+                    <Label htmlFor="registerEmail">{t("auth.email")}</Label>
                     <Input
                       id="registerEmail"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder={t("auth.email_placeholder")}
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="registerPassword">Пароль</Label>
+                    <Label htmlFor="registerPassword">{t("auth.password")}</Label>
                     <Input
                       id="registerPassword"
                       type="password"
@@ -211,12 +213,12 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
                     {isLoading ? (
                       <>
                         <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
-                        Создаём аккаунт...
+                        {t("auth.register_progress")}
                       </>
                     ) : (
                       <>
                         <Icon name="UserPlus" size={18} className="mr-2" />
-                        Зарегистрироваться
+                        {t("auth.register_button")}
                       </>
                     )}
                   </Button>
@@ -229,7 +231,7 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
         <div className="text-center mt-6">
           <Button variant="link" onClick={() => onNavigate('landing')}>
             <Icon name="ArrowLeft" size={16} className="mr-2" />
-            Вернуться на главную
+            {t("auth.back_to_home")}
           </Button>
         </div>
       </div>
