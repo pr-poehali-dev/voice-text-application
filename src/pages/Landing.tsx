@@ -1,38 +1,42 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Icon from "@/components/ui/icon";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
+  const { t } = useLanguage();
+  
   const features = [
     {
       icon: "Mic2",
-      title: "Реалистичные голоса",
-      description: "Более 50 естественных голосов на русском и других языках"
+      title: t("feature.realistic_voices.title"),
+      description: t("feature.realistic_voices.desc")
     },
     {
       icon: "Settings2",
-      title: "Гибкие настройки",
-      description: "Управляйте скоростью, высотой тона и интонацией"
+      title: t("feature.flexible_settings.title"),
+      description: t("feature.flexible_settings.desc")
     },
     {
       icon: "Download",
-      title: "Все форматы",
-      description: "Скачивайте в MP3, WAV, OGG и других форматах"
+      title: t("feature.all_formats.title"),
+      description: t("feature.all_formats.desc")
     },
     {
       icon: "Zap",
-      title: "Быстро и просто",
-      description: "Озвучка текста за несколько секунд"
+      title: t("feature.fast_simple.title"),
+      description: t("feature.fast_simple.desc")
     },
     {
       icon: "FileText",
-      title: "История проектов",
-      description: "Все ваши озвучки сохраняются в личном кабинете"
+      title: t("feature.project_history.title"),
+      description: t("feature.project_history.desc")
     },
     {
       icon: "CreditCard",
-      title: "Гибкая оплата",
-      description: "Бесплатный тариф и доступные платные планы"
+      title: t("feature.flexible_payment.title"),
+      description: t("feature.flexible_payment.desc")
     }
   ];
 
@@ -44,59 +48,60 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <Icon name="Volume2" size={24} className="text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">VoiceAI</span>
+            <span className="text-xl font-bold">{t("app.name")}</span>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => onNavigate('auth')}>Войти</Button>
-            <Button onClick={() => onNavigate('auth')}>Начать бесплатно</Button>
+            <LanguageSwitcher />
+            <Button variant="ghost" onClick={() => onNavigate('auth')}>{t("nav.login")}</Button>
+            <Button onClick={() => onNavigate('auth')}>{t("nav.start_free")}</Button>
           </div>
         </div>
       </header>
 
       <section className="max-w-7xl mx-auto px-6 py-20 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-          Превратите текст в<br />
-          <span className="text-primary">живой голос</span>
+          {t("hero.title")}<br />
+          <span className="text-primary">{t("hero.title_accent")}</span>
         </h1>
         <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-          Профессиональная озвучка текста нейросетью. Реалистичные голоса, гибкие настройки, все форматы
+          {t("hero.subtitle")}
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
           <Button size="lg" onClick={() => onNavigate('auth')} className="h-12 px-8 text-lg">
             <Icon name="Mic" size={20} className="mr-2" />
-            Попробовать бесплатно
+            {t("hero.try_free")}
           </Button>
           <Button size="lg" variant="outline" className="h-12 px-8 text-lg">
             <Icon name="Play" size={20} className="mr-2" />
-            Послушать примеры
+            {t("hero.listen_samples")}
           </Button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-primary mb-2">50+</div>
-            <div className="text-sm text-muted-foreground">Голосов</div>
+            <div className="text-sm text-muted-foreground">{t("stats.voices")}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-primary mb-2">10K+</div>
-            <div className="text-sm text-muted-foreground">Пользователей</div>
+            <div className="text-sm text-muted-foreground">{t("stats.users")}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-primary mb-2">100K+</div>
-            <div className="text-sm text-muted-foreground">Озвучек</div>
+            <div className="text-sm text-muted-foreground">{t("stats.voiceovers")}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-primary mb-2">15</div>
-            <div className="text-sm text-muted-foreground">Языков</div>
+            <div className="text-sm text-muted-foreground">{t("stats.languages")}</div>
           </div>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-foreground mb-4">Возможности</h2>
+          <h2 className="text-4xl font-bold text-foreground mb-4">{t("features.title")}</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Всё для профессиональной озвучки ваших текстов
+            {t("features.subtitle")}
           </p>
         </div>
 
