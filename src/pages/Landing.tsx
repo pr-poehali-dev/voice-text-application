@@ -365,7 +365,7 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
                   </Button>
                   
                   <div className="text-xs text-center text-muted-foreground">
-                    Демо-режим: реальная озвучка доступна после регистрации
+                    Примеры демонстрируют качество озвучки на разных языках
                   </div>
                 </div>
               </CardContent>
