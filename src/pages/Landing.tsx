@@ -34,8 +34,26 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
   const currentSample = voiceSamples.find(s => s.lang === selectedSampleLang) || voiceSamples[0];
   
   const handlePlaySample = () => {
-    setIsPlaying(true);
-    setTimeout(() => setIsPlaying(false), 3000);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(currentSample.text);
+      utterance.lang = selectedSampleLang;
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      
+      const voices = window.speechSynthesis.getVoices();
+      const langVoices = voices.filter(voice => voice.lang.startsWith(selectedSampleLang));
+      if (langVoices.length > 0) {
+        utterance.voice = langVoices[0];
+      }
+      
+      utterance.onstart = () => setIsPlaying(true);
+      utterance.onend = () => setIsPlaying(false);
+      utterance.onerror = () => setIsPlaying(false);
+      
+      window.speechSynthesis.speak(utterance);
+    }
   };
   
   const features = [
