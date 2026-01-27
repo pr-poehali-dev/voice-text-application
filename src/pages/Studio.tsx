@@ -37,14 +37,20 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
 
   const languages = [
     { code: "ru", name: "Русский", flag: "🇷🇺" },
-    { code: "en", name: "English", flag: "🇺🇸" },
-    { code: "de", name: "Deutsch", flag: "🇩🇪" },
-    { code: "fr", name: "Français", flag: "🇫🇷" },
+    { code: "en", name: "English", flag: "🇬🇧" },
     { code: "es", name: "Español", flag: "🇪🇸" },
+    { code: "fr", name: "Français", flag: "🇫🇷" },
+    { code: "de", name: "Deutsch", flag: "🇩🇪" },
     { code: "it", name: "Italiano", flag: "🇮🇹" },
+    { code: "pt", name: "Português", flag: "🇵🇹" },
+    { code: "zh", name: "中文", flag: "🇨🇳" },
+    { code: "ja", name: "日本語", flag: "🇯🇵" },
+    { code: "ko", name: "한국어", flag: "🇰🇷" },
+    { code: "ar", name: "العربية", flag: "🇸🇦" },
+    { code: "hi", name: "हिन्दी", flag: "🇮🇳" },
     { code: "tr", name: "Türkçe", flag: "🇹🇷" },
-    { code: "uz", name: "O'zbek", flag: "🇺🇿" },
-    { code: "kk", name: "Қазақ", flag: "🇰🇿" },
+    { code: "pl", name: "Polski", flag: "🇵🇱" },
+    { code: "kk", name: "Қазақша", flag: "🇰🇿" },
   ];
 
   const voices: Voice[] = [
@@ -62,12 +68,41 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
     { id: "lea", name: "Lea", gender: "female", language: "de", languageName: "Deutsch", premium: true, description: "Freundliche deutsche Stimme" },
     { id: "bruno", name: "Bruno", gender: "male", language: "de", languageName: "Deutsch", premium: true, description: "Klare männliche Stimme" },
     
-    { id: "amira", name: "Amira", gender: "female", language: "uz", languageName: "O'zbek", premium: true, description: "O'zbek ayol ovozi" },
-    { id: "nigora", name: "Nigora", gender: "female", language: "uz", languageName: "O'zbek", premium: true, description: "Yumshoq ayol ovozi" },
+    { id: "maria", name: "María", gender: "female", language: "es", languageName: "Español", premium: true, description: "Voz femenina española" },
+    { id: "carlos", name: "Carlos", gender: "male", language: "es", languageName: "Español", premium: true, description: "Voz masculina española" },
     
-    { id: "madi", name: "Madi", gender: "male", language: "kk", languageName: "Қазақ", premium: true, description: "Қазақ ер дауысы" },
+    { id: "amelie", name: "Amélie", gender: "female", language: "fr", languageName: "Français", premium: true, description: "Voix féminine française" },
+    { id: "pierre", name: "Pierre", gender: "male", language: "fr", languageName: "Français", premium: true, description: "Voix masculine française" },
+    
+    { id: "sofia", name: "Sofia", gender: "female", language: "it", languageName: "Italiano", premium: true, description: "Voce femminile italiana" },
+    { id: "marco", name: "Marco", gender: "male", language: "it", languageName: "Italiano", premium: true, description: "Voce maschile italiana" },
+    
+    { id: "ana", name: "Ana", gender: "female", language: "pt", languageName: "Português", premium: true, description: "Voz feminina portuguesa" },
+    { id: "joao", name: "João", gender: "male", language: "pt", languageName: "Português", premium: true, description: "Voz masculina portuguesa" },
+    
+    { id: "li", name: "Li", gender: "female", language: "zh", languageName: "中文", premium: true, description: "中文女声" },
+    { id: "wang", name: "Wang", gender: "male", language: "zh", languageName: "中文", premium: true, description: "中文男声" },
+    
+    { id: "yuki", name: "Yuki", gender: "female", language: "ja", languageName: "日本語", premium: true, description: "日本語女性音声" },
+    { id: "takeshi", name: "Takeshi", gender: "male", language: "ja", languageName: "日本語", premium: true, description: "日本語男性音声" },
+    
+    { id: "minjee", name: "Minjee", gender: "female", language: "ko", languageName: "한국어", premium: true, description: "한국어 여성 음성" },
+    { id: "jihoon", name: "Jihoon", gender: "male", language: "ko", languageName: "한국어", premium: true, description: "한국어 남성 음성" },
+    
+    { id: "fatima", name: "Fatima", gender: "female", language: "ar", languageName: "العربية", premium: true, description: "صوت أنثوي عربي" },
+    { id: "omar", name: "Omar", gender: "male", language: "ar", languageName: "العربية", premium: true, description: "صوت ذكوري عربي" },
+    
+    { id: "priya", name: "Priya", gender: "female", language: "hi", languageName: "हिन्दी", premium: true, description: "हिंदी महिला आवाज" },
+    { id: "arjun", name: "Arjun", gender: "male", language: "hi", languageName: "हिन्दी", premium: true, description: "हिंदी पुरुष आवाज" },
     
     { id: "aylin", name: "Aylin", gender: "female", language: "tr", languageName: "Türkçe", premium: true, description: "Türk kadın sesi" },
+    { id: "mehmet", name: "Mehmet", gender: "male", language: "tr", languageName: "Türkçe", premium: true, description: "Türk erkek sesi" },
+    
+    { id: "anna", name: "Anna", gender: "female", language: "pl", languageName: "Polski", premium: true, description: "Polski głos kobiecy" },
+    { id: "jan", name: "Jan", gender: "male", language: "pl", languageName: "Polski", premium: true, description: "Polski głos męski" },
+    
+    { id: "ainur", name: "Айнұр", gender: "female", language: "kk", languageName: "Қазақша", premium: true, description: "Қазақ әйел дауысы" },
+    { id: "madi", name: "Мәди", gender: "male", language: "kk", languageName: "Қазақша", premium: true, description: "Қазақ ер дауысы" },
     
     { id: "alena_premium", name: "Алёна Premium", gender: "female", language: "ru", languageName: "Русский", premium: true, description: "Нейронный женский голос" },
     { id: "filipp_premium", name: "Филипп Premium", gender: "male", language: "ru", languageName: "Русский", premium: true, description: "Нейронный мужской голос" },
