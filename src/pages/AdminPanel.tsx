@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Icon from "@/components/ui/icon";
 import { useToast } from "@/hooks/use-toast";
+import WalletWidget from "@/components/WalletWidget";
+import NotificationBell from "@/components/NotificationBell";
 import type { User } from "./Index";
 
 interface AdminUser {
@@ -291,6 +293,8 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
             </Badge>
           </div>
           <div className="flex items-center gap-3">
+            <WalletWidget user={user} />
+            <NotificationBell user={user} />
             <Button variant="ghost" size="sm" onClick={() => onNavigate('studio')}>
               <Icon name="Mic2" size={18} className="mr-2" />
               Студия

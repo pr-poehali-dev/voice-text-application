@@ -5,6 +5,8 @@ import Icon from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import WalletWidget from "@/components/WalletWidget";
+import NotificationBell from "@/components/NotificationBell";
 import type { User } from "./Index";
 
 interface UserStats {
@@ -320,6 +322,8 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
             <span className="text-sm font-medium">{user.name}</span>
           </div>
           <div className="flex items-center gap-3">
+            <WalletWidget user={user} />
+            <NotificationBell user={user} />
             <Button variant="ghost" size="sm" onClick={() => onNavigate('studio')}>
               <Icon name="Mic2" size={18} className="mr-2" />
               Студия

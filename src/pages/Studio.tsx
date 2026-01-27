@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Icon from "@/components/ui/icon";
 import { useToast } from "@/hooks/use-toast";
+import WalletWidget from "@/components/WalletWidget";
+import NotificationBell from "@/components/NotificationBell";
 import type { User } from "./Index";
 
 interface Voice {
@@ -279,6 +281,8 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
             </Badge>
           </div>
           <div className="flex items-center gap-3">
+            <WalletWidget user={user} />
+            <NotificationBell user={user} />
             <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard')}>
               <Icon name="LayoutDashboard" size={18} className="mr-2" />
               Кабинет

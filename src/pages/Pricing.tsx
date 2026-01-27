@@ -1,14 +1,19 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import type { User } from "./Index";
 
 const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) => void }) => {
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const { toast } = useToast();
   const plans = [
     {
       id: 'free',
       name: 'Бесплатный',
+      planKey: 'free',
       price: 0,
       period: '',
       description: 'Для знакомства с сервисом',
@@ -25,6 +30,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
     {
       id: 'basic',
       name: 'Базовый',
+      planKey: 'starter',
       price: 490,
       period: 'месяц',
       description: 'Для небольших проектов',
@@ -42,6 +48,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
     {
       id: 'pro',
       name: 'Профи',
+      planKey: 'professional',
       price: 1990,
       period: 'месяц',
       description: 'Для профессионалов',
@@ -60,6 +67,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
     {
       id: 'unlimited',
       name: 'Безлимит',
+      planKey: 'business',
       price: 4990,
       period: 'месяц',
       description: 'Для крупного бизнеса',
@@ -77,12 +85,61 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
     }
   ];
 
-  const handleSelectPlan = (planId: string) => {
-    if (planId === user.plan) {
+  const handleSelectPlan = async (planId: string, planKey: string, price: number) => {
+    if (planId === user.plan || planId === 'free') {
       return;
     }
-    
-    onNavigate('payment');
+
+    setIsProcessing(planId);
+
+    try {
+      const response = await fetch(
+        "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8/charge",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Id": user.id.toString(),
+          },
+          body: JSON.stringify({ plan: planKey }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Успешно!",
+          description: `Тариф "${plans.find(p => p.id === planId)?.name}" успешно оплачен. Списано ${price} ₽`,
+        });
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        if (data.error?.includes("Недостаточно средств")) {
+          toast({
+            title: "Недостаточно средств",
+            description: `Пополните баланс. Требуется: ${price} ₽, доступно: ${data.balance || 0} ₽`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Ошибка",
+            description: data.error || "Не удалось оплатить тариф",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось оплатить тариф",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(null);
+    }
   };
 
   return (
@@ -148,10 +205,19 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
                 <Button
                   className="w-full mt-4"
                   variant={plan.id === user.plan ? 'outline' : 'default'}
-                  disabled={plan.id === user.plan}
-                  onClick={() => handleSelectPlan(plan.id)}
+                  disabled={plan.id === user.plan || isProcessing === plan.id}
+                  onClick={() => handleSelectPlan(plan.id, plan.planKey, plan.price)}
                 >
-                  {plan.id === user.plan ? 'Текущий тариф' : plan.buttonText}
+                  {isProcessing === plan.id ? (
+                    <>
+                      <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                      Обработка...
+                    </>
+                  ) : plan.id === user.plan ? (
+                    'Текущий тариф'
+                  ) : (
+                    plan.buttonText
+                  )}
                 </Button>
               </CardContent>
             </Card>
