@@ -12,47 +12,60 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
   const [showSamples, setShowSamples] = useState(false);
   const [selectedSampleLang, setSelectedSampleLang] = useState("ru");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   
   const voiceSamples = [
-    { lang: "ru", flag: "🇷🇺", name: "Русский", voice: "Алёна", text: "Добро пожаловать в VoiceAI - профессиональная озвучка текста нейросетью" },
-    { lang: "en", flag: "🇬🇧", name: "English", voice: "Jane", text: "Welcome to VoiceAI - professional text-to-speech powered by neural networks" },
-    { lang: "es", flag: "🇪🇸", name: "Español", voice: "María", text: "Bienvenido a VoiceAI - conversión profesional de texto a voz con redes neuronales" },
-    { lang: "fr", flag: "🇫🇷", name: "Français", voice: "Amélie", text: "Bienvenue sur VoiceAI - synthèse vocale professionnelle par réseaux neuronaux" },
-    { lang: "de", flag: "🇩🇪", name: "Deutsch", voice: "Lea", text: "Willkommen bei VoiceAI - professionelle Text-zu-Sprache mit neuronalen Netzen" },
-    { lang: "it", flag: "🇮🇹", name: "Italiano", voice: "Sofia", text: "Benvenuto su VoiceAI - sintesi vocale professionale con reti neurali" },
-    { lang: "pt", flag: "🇵🇹", name: "Português", voice: "Ana", text: "Bem-vindo ao VoiceAI - conversão profissional de texto em fala com redes neurais" },
-    { lang: "zh", flag: "🇨🇳", name: "中文", voice: "Li", text: "欢迎使用VoiceAI - 由神经网络驱动的专业文本转语音" },
-    { lang: "ja", flag: "🇯🇵", name: "日本語", voice: "Yuki", text: "VoiceAIへようこそ - ニューラルネットワークによるプロフェッショナルな音声合成" },
-    { lang: "ko", flag: "🇰🇷", name: "한국어", voice: "Minjee", text: "VoiceAI에 오신 것을 환영합니다 - 신경망 기반 전문 텍스트 음성 변환" },
-    { lang: "ar", flag: "🇸🇦", name: "العربية", voice: "Fatima", text: "مرحبا بك في VoiceAI - تحويل نص احترافي إلى كلام بالشبكات العصبية" },
-    { lang: "hi", flag: "🇮🇳", name: "हिन्दी", voice: "Priya", text: "VoiceAI में आपका स्वागत है - तंत्रिका नेटवर्क द्वारा संचालित पेशेवर पाठ-से-भाषण" },
-    { lang: "tr", flag: "🇹🇷", name: "Türkçe", voice: "Aylin", text: "VoiceAI'ye hoş geldiniz - sinir ağları ile profesyonel metinden sese dönüşüm" },
-    { lang: "pl", flag: "🇵🇱", name: "Polski", voice: "Anna", text: "Witamy w VoiceAI - profesjonalna synteza mowy oparta na sieciach neuronowych" },
-    { lang: "kk", flag: "🇰🇿", name: "Қазақша", voice: "Айнұр", text: "VoiceAI-ге қош келдіңіз - нейрондық желілермен қуатталған кәсіби мәтінді дауысқа айналдыру" },
+    { lang: "ru", flag: "🇷🇺", name: "Русский", voice: "alena", voiceName: "Алёна", text: "Добро пожаловать в VoiceAI - профессиональная озвучка текста нейросетью с естественным звучанием" },
+    { lang: "en", flag: "🇬🇧", name: "English", voice: "jane-en", voiceName: "Jane", text: "Welcome to VoiceAI - professional text-to-speech powered by neural networks with natural sound" },
+    { lang: "es", flag: "🇪🇸", name: "Español", voice: "maria", voiceName: "María", text: "Bienvenido a VoiceAI - conversión profesional de texto a voz con redes neuronales" },
+    { lang: "fr", flag: "🇫🇷", name: "Français", voice: "amelie", voiceName: "Amélie", text: "Bienvenue sur VoiceAI - synthèse vocale professionnelle par réseaux neuronaux" },
+    { lang: "de", flag: "🇩🇪", name: "Deutsch", voice: "lea", voiceName: "Lea", text: "Willkommen bei VoiceAI - professionelle Text-zu-Sprache mit neuronalen Netzen" },
+    { lang: "it", flag: "🇮🇹", name: "Italiano", voice: "sofia", voiceName: "Sofia", text: "Benvenuto su VoiceAI - sintesi vocale professionale con reti neurali" },
+    { lang: "pt", flag: "🇵🇹", name: "Português", voice: "ana", voiceName: "Ana", text: "Bem-vindo ao VoiceAI - conversão profissional de texto em fala com redes neurais" },
+    { lang: "zh", flag: "🇨🇳", name: "中文", voice: "alena", voiceName: "Li", text: "欢迎使用VoiceAI - 由神经网络驱动的专业文本转语音" },
+    { lang: "ja", flag: "🇯🇵", name: "日本語", voice: "alena", voiceName: "Yuki", text: "VoiceAIへようこそ - ニューラルネットワークによるプロフェッショナルな音声合成" },
+    { lang: "ko", flag: "🇰🇷", name: "한국어", voice: "alena", voiceName: "Minjee", text: "VoiceAI에 오신 것을 환영합니다 - 신경망 기반 전문 텍스트 음성 변환" },
+    { lang: "ar", flag: "🇸🇦", name: "العربية", voice: "alena", voiceName: "Fatima", text: "مرحبا بك في VoiceAI - تحويل نص احترافي إلى كلام بالشبكات العصبية" },
+    { lang: "hi", flag: "🇮🇳", name: "हिन्दी", voice: "alena", voiceName: "Priya", text: "VoiceAI में आपका स्वागत है - तंत्रिका नेटवर्क द्वारा संचालित पेशेवर पाठ-से-भाषण" },
+    { lang: "tr", flag: "🇹🇷", name: "Türkçe", voice: "aylin", voiceName: "Aylin", text: "VoiceAI'ye hoş geldiniz - sinir ağları ile profesyonel metinden sese dönüşüm" },
+    { lang: "pl", flag: "🇵🇱", name: "Polski", voice: "alena", voiceName: "Anna", text: "Witamy w VoiceAI - profesjonalna synteza mowy oparta na sieciach neuronowych" },
+    { lang: "kk", flag: "🇰🇿", name: "Қазақша", voice: "madi", voiceName: "Айнұр", text: "VoiceAI-ге қош келдіңіз - нейрондық желілермен қуатталған кәсіби мәтінді дауысқа айналдыру" },
   ];
   
   const currentSample = voiceSamples.find(s => s.lang === selectedSampleLang) || voiceSamples[0];
   
-  const handlePlaySample = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+  const handlePlaySample = async () => {
+    setIsPlaying(true);
+    
+    try {
+      const response = await fetch('https://functions.poehali.dev/8d288713-243e-43b4-9efe-f5e77747a468', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: currentSample.text,
+          voice: currentSample.voice,
+          speed: 1.0,
+          format: 'mp3'
+        })
+      });
       
-      const utterance = new SpeechSynthesisUtterance(currentSample.text);
-      utterance.lang = selectedSampleLang;
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
+      const data = await response.json();
       
-      const voices = window.speechSynthesis.getVoices();
-      const langVoices = voices.filter(voice => voice.lang.startsWith(selectedSampleLang));
-      if (langVoices.length > 0) {
-        utterance.voice = langVoices[0];
+      if (response.ok && data.audioUrl) {
+        setAudioUrl(data.audioUrl);
+        const audio = new Audio(data.audioUrl);
+        audio.onended = () => setIsPlaying(false);
+        audio.onerror = () => setIsPlaying(false);
+        await audio.play();
+      } else {
+        console.error('Ошибка генерации:', data.error);
+        setIsPlaying(false);
       }
-      
-      utterance.onstart = () => setIsPlaying(true);
-      utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => setIsPlaying(false);
-      
-      window.speechSynthesis.speak(utterance);
+    } catch (error) {
+      console.error('Ошибка запроса:', error);
+      setIsPlaying(false);
     }
   };
   
@@ -355,7 +368,7 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
                     <div className="text-4xl">{currentSample.flag}</div>
                     <div>
                       <div className="font-semibold text-lg">{currentSample.name}</div>
-                      <div className="text-sm text-muted-foreground">Голос: {currentSample.voice}</div>
+                      <div className="text-sm text-muted-foreground">Голос: {currentSample.voiceName}</div>
                     </div>
                   </div>
                   
