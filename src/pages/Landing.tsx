@@ -13,6 +13,7 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
   const [selectedSampleLang, setSelectedSampleLang] = useState("ru");
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
   const voiceSamples = [
     { lang: "ru", flag: "🇷🇺", name: "Русский", voice: "alena", voiceName: "Алёна", text: "Добро пожаловать в VoiceAI - профессиональная озвучка текста нейросетью с естественным звучанием" },
@@ -36,6 +37,7 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
   
   const handlePlaySample = async () => {
     setIsPlaying(true);
+    setError(null);
     
     try {
       const response = await fetch('https://functions.poehali.dev/8d288713-243e-43b4-9efe-f5e77747a468', {
@@ -51,20 +53,35 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
         })
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
-      if (response.ok && data.audioUrl) {
+      if (data.audioUrl) {
         setAudioUrl(data.audioUrl);
         const audio = new Audio(data.audioUrl);
+        
+        audio.onloadeddata = () => {
+          audio.play().catch(err => {
+            console.error('Ошибка воспроизведения:', err);
+            setError('Не удалось воспроизвести аудио');
+            setIsPlaying(false);
+          });
+        };
+        
         audio.onended = () => setIsPlaying(false);
-        audio.onerror = () => setIsPlaying(false);
-        await audio.play();
+        audio.onerror = () => {
+          setError('Ошибка загрузки аудио');
+          setIsPlaying(false);
+        };
       } else {
-        console.error('Ошибка генерации:', data.error);
-        setIsPlaying(false);
+        throw new Error(data.error || 'Не удалось получить аудио');
       }
-    } catch (error) {
-      console.error('Ошибка запроса:', error);
+    } catch (err) {
+      console.error('Ошибка запроса:', err);
+      setError(err instanceof Error ? err.message : 'Ошибка запроса');
       setIsPlaying(false);
     }
   };
@@ -394,6 +411,12 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
                       </>
                     )}
                   </Button>
+                  
+                  {error && (
+                    <div className="text-xs text-center text-destructive">
+                      {error}
+                    </div>
+                  )}
                   
                   <div className="text-xs text-center text-muted-foreground">
                     Примеры демонстрируют качество озвучки на разных языках
