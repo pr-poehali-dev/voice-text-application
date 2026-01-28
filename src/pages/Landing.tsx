@@ -59,9 +59,9 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
       
       const data = await response.json();
       
-      if (data.audioUrl) {
-        setAudioUrl(data.audioUrl);
-        const audio = new Audio(data.audioUrl);
+      if (data.audio_url) {
+        setAudioUrl(data.audio_url);
+        const audio = new Audio(data.audio_url);
         
         audio.onloadeddata = () => {
           audio.play().catch(err => {
