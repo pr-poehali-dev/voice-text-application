@@ -23,16 +23,7 @@ interface NotificationBellProps {
 }
 
 const NotificationBell = ({ user }: NotificationBellProps) => {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 1,
-      title: "Добро пожаловать!",
-      message: "Ваш кошелек успешно создан",
-      type: "success",
-      read: false,
-      created_at: new Date().toISOString(),
-    },
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
