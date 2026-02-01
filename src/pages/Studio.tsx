@@ -31,6 +31,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
   const [format, setFormat] = useState("mp3");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isTechnicalMode, setIsTechnicalMode] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const { toast } = useToast();
@@ -211,7 +212,8 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
         body: JSON.stringify({
           text,
           targetLanguage: targetLang,
-          sourceLanguage: 'auto'
+          sourceLanguage: 'auto',
+          technical: isTechnicalMode
         })
       });
 
@@ -228,7 +230,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
         
         toast({
           title: "Перевод готов!",
-          description: `Текст переведён на ${languages.find(l => l.code === targetLang)?.name}`
+          description: `Текст переведён на ${languages.find(l => l.code === targetLang)?.name}${data.translation_type === 'technical' ? ' (технический режим)' : ''}`
         });
       } else {
         throw new Error(data.error || 'Ошибка перевода');
@@ -424,6 +426,15 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                         <Icon name="Languages" size={16} className="mr-2" />
                       )}
                       Определить язык
+                    </Button>
+                    <Button
+                      variant={isTechnicalMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setIsTechnicalMode(!isTechnicalMode)}
+                      title="Технический перевод с сохранением терминологии охраны труда"
+                    >
+                      <Icon name="HardHat" size={16} className="mr-2" />
+                      {isTechnicalMode ? "Тех. режим" : "Тех. режим"}
                     </Button>
                     <Select onValueChange={handleTranslate} disabled={isTranslating || !text.trim()}>
                       <SelectTrigger className="w-[180px]">
