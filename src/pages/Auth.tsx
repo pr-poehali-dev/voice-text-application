@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { User } from "./Index";
 
-const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNavigate: (page: string) => void }) => {
+const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User, isNewUser?: boolean) => void; onNavigate: (page: string) => void }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -86,7 +86,7 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User) => void; onNaviga
         description: t("auth.register_welcome")
       });
 
-      onLogin(newUser);
+      onLogin(newUser, true);
       setIsLoading(false);
     }, 1000);
   };

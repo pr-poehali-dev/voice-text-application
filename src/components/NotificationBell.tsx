@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -20,11 +20,19 @@ interface Notification {
 
 interface NotificationBellProps {
   user: User;
+  onAddNotification?: (notification: Omit<Notification, 'id'>) => void;
 }
 
 const NotificationBell = ({ user }: NotificationBellProps) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    const saved = localStorage.getItem(`notifications_${user.id}`);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(`notifications_${user.id}`, JSON.stringify(notifications));
+  }, [notifications, user.id]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -37,6 +45,21 @@ const NotificationBell = ({ user }: NotificationBellProps) => {
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
+
+  const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: Date.now(),
+    };
+    setNotifications((prev) => [newNotification, ...prev]);
+  }, []);
+
+  useEffect(() => {
+    (window as any).addNotification = addNotification;
+    return () => {
+      delete (window as any).addNotification;
+    };
+  }, [addNotification]);
 
   const getIconByType = (type: Notification["type"]) => {
     switch (type) {

@@ -29,10 +29,24 @@ const Index = () => {
     }
   }, []);
 
-  const handleLogin = (userData: User) => {
+  const handleLogin = (userData: User, isNewUser: boolean = false) => {
     setUser(userData);
     localStorage.setItem('voiceAppUser', JSON.stringify(userData));
     setCurrentPage(userData.role === 'admin' ? 'admin' : 'studio');
+    
+    if (isNewUser) {
+      setTimeout(() => {
+        if ((window as any).addNotification) {
+          (window as any).addNotification({
+            title: "Добро пожаловать в наше веб-приложение!",
+            message: "Желаем плодотворной работы.",
+            type: "success",
+            read: false,
+            created_at: new Date().toISOString(),
+          });
+        }
+      }, 500);
+    }
   };
 
   const handleLogout = () => {
