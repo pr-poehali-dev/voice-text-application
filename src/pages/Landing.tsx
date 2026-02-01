@@ -335,6 +335,10 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
                 </li>
                 <li className="flex items-center gap-2">
                   <Icon name="Check" size={16} className="text-primary" />
+                  <span>Технический перевод</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Icon name="Check" size={16} className="text-primary" />
                   <span>API доступ</span>
                 </li>
                 <li className="flex items-center gap-2">

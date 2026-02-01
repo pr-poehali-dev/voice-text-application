@@ -547,6 +547,18 @@ const Dashboard = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pa
                     {characterLimit === Infinity ? 'Без ограничений' : `${characterLimit.toLocaleString()} символов/мес`}
                   </div>
                 </div>
+                
+                {user.plan === 'unlimited' && (
+                  <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon name="HardHat" size={16} className="text-primary" />
+                      <span className="text-sm font-semibold text-foreground">Технический перевод</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Перевод с сохранением терминологии охраны труда и технических процессов
+                    </p>
+                  </div>
+                )}
 
                 {characterLimit !== Infinity && (
                   <div>

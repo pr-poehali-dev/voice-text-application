@@ -430,11 +430,23 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                     <Button
                       variant={isTechnicalMode ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setIsTechnicalMode(!isTechnicalMode)}
-                      title="Технический перевод с сохранением терминологии охраны труда"
+                      onClick={() => {
+                        if (user.plan !== 'unlimited') {
+                          toast({
+                            title: "Технический перевод",
+                            description: "Эта функция доступна только на тарифе Безлимит",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        setIsTechnicalMode(!isTechnicalMode);
+                      }}
+                      title="Технический перевод с сохранением терминологии охраны труда (только тариф Безлимит)"
+                      disabled={user.plan !== 'unlimited' && !isTechnicalMode}
                     >
                       <Icon name="HardHat" size={16} className="mr-2" />
                       {isTechnicalMode ? "Тех. режим" : "Тех. режим"}
+                      {user.plan !== 'unlimited' && <Icon name="Lock" size={14} className="ml-1" />}
                     </Button>
                     <Select onValueChange={handleTranslate} disabled={isTranslating || !text.trim()}>
                       <SelectTrigger className="w-[180px]">
