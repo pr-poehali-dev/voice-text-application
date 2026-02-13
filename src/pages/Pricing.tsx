@@ -72,7 +72,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
       period: 'месяц',
       description: 'Для крупного бизнеса',
       features: [
-        'Безлимитные символы',
+        'До 8,000 символов за запрос',
         'Все голоса + эксклюзивные',
         'Все форматы',
         'Персональный менеджер',
