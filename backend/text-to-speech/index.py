@@ -85,14 +85,32 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
         
-        if len(text) > 5000:
+        max_chars = 5000
+        if user_id:
+            try:
+                dsn = os.environ.get('DATABASE_URL')
+                if dsn:
+                    schema_name = os.environ.get('MAIN_DB_SCHEMA', 'public')
+                    dsn_check = f"{dsn} options='-c search_path={schema_name}'"
+                    conn_check = psycopg2.connect(dsn_check)
+                    cur_check = conn_check.cursor()
+                    cur_check.execute("SELECT role, plan FROM users WHERE id = %s", (user_id,))
+                    row = cur_check.fetchone()
+                    if row and (row[0] == 'admin' or row[1] == 'unlimited'):
+                        max_chars = 8000
+                    cur_check.close()
+                    conn_check.close()
+            except Exception:
+                pass
+
+        if len(text) > max_chars:
             return {
                 'statusCode': 400,
                 'headers': {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 },
-                'body': json.dumps({'error': 'Текст слишком длинный (максимум 5000 символов). Разбейте на несколько частей.'}),
+                'body': json.dumps({'error': f'Текст слишком длинный (максимум {max_chars} символов). Разбейте на несколько частей.'}),
                 'isBase64Encoded': False
             }
         

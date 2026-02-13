@@ -145,7 +145,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
 
   const maxCharacters = (user.role === 'admin' || user.plan === 'unlimited')
     ? 8000
-    : { free: 5000, basic: 50000, pro: 300000, unlimited: 8000 }[user.plan];
+    : { free: 5000, basic: 50000, pro: 300000, unlimited: 8000 }[user.plan] ?? 5000;
 
   const canGenerate = characterCount > 0 && characterCount <= maxCharacters;
 
