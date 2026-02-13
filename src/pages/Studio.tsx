@@ -143,12 +143,9 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
   const characterCount = text.length;
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
 
-  const maxCharacters = {
-    free: 5000,
-    basic: 50000,
-    pro: 300000,
-    unlimited: Infinity
-  }[user.plan];
+  const maxCharacters = (user.role === 'admin' || user.plan === 'unlimited')
+    ? 8000
+    : { free: 5000, basic: 50000, pro: 300000, unlimited: 8000 }[user.plan];
 
   const canGenerate = characterCount > 0 && characterCount <= maxCharacters;
 
