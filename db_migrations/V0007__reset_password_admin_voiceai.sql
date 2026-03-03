@@ -1,0 +1,1 @@
+UPDATE users SET password_hash = '$2b$12$9N6aW7MqFX2Mza5UrmDKne8Z3LWjEAeY9TQNQFCZX9VE04/Pi0pY6' WHERE email = 'admin@voiceai.ru';
