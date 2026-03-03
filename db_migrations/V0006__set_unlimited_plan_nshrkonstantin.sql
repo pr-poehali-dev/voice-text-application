@@ -1,0 +1,1 @@
+UPDATE users SET plan = 'unlimited', characters_limit = 0 WHERE email = 'nshrkonstantin@gmail.com';
