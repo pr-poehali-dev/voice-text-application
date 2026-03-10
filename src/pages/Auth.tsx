@@ -21,74 +21,65 @@ const Auth = ({ onLogin, onNavigate }: { onLogin: (user: User, isNewUser?: boole
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
 
+  const AUTH_URL = 'https://functions.poehali.dev/0476f45c-68aa-4332-a021-8f5594364dc5';
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (loginEmail === 'admin@voiceai.ru' && loginPassword === 'admin123') {
-      const adminUser: User = {
-        id: 1,
-        email: 'admin@voiceai.ru',
-        name: 'Администратор',
-        role: 'admin',
-        plan: 'unlimited',
-        balance: 0
-      };
-      
-      toast({
-        title: t("auth.welcome_toast"),
-        description: t("auth.welcome_admin")
+    try {
+      const response = await fetch(AUTH_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', email: loginEmail, password: loginPassword })
       });
-      
-      setTimeout(() => {
-        onLogin(adminUser);
-        setIsLoading(false);
-      }, 500);
-      return;
-    }
 
-    setTimeout(() => {
-      const mockUser: User = {
-        id: 2,
-        email: loginEmail,
-        name: loginEmail.split('@')[0],
-        role: 'user',
-        plan: 'free',
-        balance: 0
-      };
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({ title: "Ошибка входа", description: data.error || "Неверный email или пароль", variant: "destructive" });
+        return;
+      }
 
       toast({
         title: t("auth.welcome_toast"),
-        description: t("auth.welcome_success")
+        description: data.user.role === 'admin' ? t("auth.welcome_admin") : t("auth.welcome_success")
       });
 
-      onLogin(mockUser);
+      onLogin(data.user);
+    } catch {
+      toast({ title: "Ошибка", description: "Не удалось подключиться к серверу", variant: "destructive" });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      const newUser: User = {
-        id: Date.now(),
-        email: registerEmail,
-        name: registerName,
-        role: 'user',
-        plan: 'free',
-        balance: 0
-      };
-
-      toast({
-        title: t("auth.register_success"),
-        description: t("auth.register_welcome")
+    try {
+      const response = await fetch(AUTH_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'register', name: registerName, email: registerEmail, password: registerPassword })
       });
 
-      onLogin(newUser, true);
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({ title: "Ошибка регистрации", description: data.error || "Не удалось создать аккаунт", variant: "destructive" });
+        return;
+      }
+
+      toast({ title: t("auth.register_success"), description: t("auth.register_welcome") });
+
+      onLogin(data.user, true);
+    } catch {
+      toast({ title: "Ошибка", description: "Не удалось подключиться к серверу", variant: "destructive" });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
