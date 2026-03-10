@@ -49,6 +49,7 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newPlan, setNewPlan] = useState<string>('');
   const [newRole, setNewRole] = useState<string>('');
+  const [changingPlanUserId, setChangingPlanUserId] = useState<number | null>(null);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
@@ -426,9 +427,35 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={planBadgeColors[u.plan as keyof typeof planBadgeColors]}>
-                            {planNames[u.plan as keyof typeof planNames]}
-                          </Badge>
+                          <Select
+                            value={u.plan}
+                            onValueChange={async (plan) => {
+                              setChangingPlanUserId(u.id);
+                              try {
+                                await fetch('https://functions.poehali.dev/fc8cc205-a9e9-4f9d-b4f3-5921b5c6743d', {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ userId: u.id, action: 'update_plan', plan })
+                                });
+                                toast({ title: "Тариф обновлён", description: `${u.name} → ${planNames[plan as keyof typeof planNames]}` });
+                                fetchUsers();
+                              } catch {
+                                toast({ title: "Ошибка", description: "Не удалось сменить тариф", variant: "destructive" });
+                              } finally {
+                                setChangingPlanUserId(null);
+                              }
+                            }}
+                          >
+                            <SelectTrigger className={`w-32 h-7 text-xs border-0 px-2 font-medium ${planBadgeColors[u.plan as keyof typeof planBadgeColors]} ${changingPlanUserId === u.id ? 'opacity-50' : ''}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="free">Бесплатный</SelectItem>
+                              <SelectItem value="basic">Базовый</SelectItem>
+                              <SelectItem value="pro">Профи</SelectItem>
+                              <SelectItem value="unlimited">Безлимит</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell>
                           <Badge
