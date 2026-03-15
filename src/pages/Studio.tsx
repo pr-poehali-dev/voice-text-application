@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +35,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
   const [isDetecting, setIsDetecting] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const { toast } = useToast();
+  const detectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const languages = [
     { code: "ru", name: "Русский", flag: "🇷🇺" },
@@ -149,45 +150,35 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
 
   const canGenerate = characterCount > 0 && characterCount <= maxCharacters;
 
-  const handleDetectLanguage = async () => {
-    if (!text.trim()) {
-      return;
-    }
-
+  const detectLanguageNow = useCallback(async (currentText: string) => {
+    if (!currentText.trim()) return;
     setIsDetecting(true);
-
     try {
       const response = await fetch('https://functions.poehali.dev/cb5de8a5-e4ad-442d-b628-4eb0278f2abc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text: currentText })
       });
-
       const data = await response.json();
-
       if (response.ok && data.language) {
         const detectedLang = data.language;
-        
         if (languages.find(l => l.code === detectedLang)) {
           setSelectedLanguage(detectedLang);
-          
           const voicesForLang = voices.filter(v => v.language === detectedLang && !v.premium);
-          if (voicesForLang.length > 0) {
-            setSelectedVoice(voicesForLang[0].id);
-          }
-
+          if (voicesForLang.length > 0) setSelectedVoice(voicesForLang[0].id);
           const langName = languages.find(l => l.code === detectedLang)?.name || detectedLang;
-          toast({
-            title: "Язык определён",
-            description: `Обнаружен ${langName}`
-          });
+          toast({ title: "Язык определён", description: `Обнаружен ${langName}` });
         }
       }
-    } catch (error) {
-      console.error('Language detection error:', error);
+    } catch {
+      // silent
     } finally {
       setIsDetecting(false);
     }
+  }, [languages, voices, toast]);
+
+  const handleDetectLanguage = () => {
+    detectLanguageNow(text);
   };
 
   const handleTranslate = async (targetLang: string) => {
@@ -233,11 +224,10 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
         throw new Error(data.error || 'Ошибка перевода');
       }
     } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: error instanceof Error ? error.message : "Не удалось перевести текст",
-        variant: "destructive"
-      });
+      const msg = error instanceof Error && error.message !== 'Failed to fetch'
+        ? error.message
+        : "Не удалось подключиться к серверу перевода. Попробуйте ещё раз.";
+      toast({ title: "Ошибка перевода", description: msg, variant: "destructive" });
     } finally {
       setIsTranslating(false);
     }
@@ -398,9 +388,11 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                   placeholder="Введите текст для озвучки..."
                   value={text}
                   onChange={(e) => {
-                    setText(e.target.value);
-                    if (e.target.value.trim().length > 10) {
-                      handleDetectLanguage();
+                    const val = e.target.value;
+                    setText(val);
+                    if (val.trim().length > 10) {
+                      if (detectTimerRef.current) clearTimeout(detectTimerRef.current);
+                      detectTimerRef.current = setTimeout(() => detectLanguageNow(val), 1000);
                     }
                   }}
                   className="min-h-[200px] text-base"
