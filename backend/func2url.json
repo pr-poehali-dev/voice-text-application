@@ -1,4 +1,5 @@
 {
+  "detect-language": "https://functions.poehali.dev/cb5de8a5-e4ad-442d-b628-4eb0278f2abc",
   "auth-login": "https://functions.poehali.dev/0476f45c-68aa-4332-a021-8f5594364dc5",
   "manage-project": "https://functions.poehali.dev/b4ac418f-9a78-41d9-9a00-68f1eb7d3979",
   "delete-project": "https://functions.poehali.dev/a6bc55c1-4b0b-4672-8b96-aef4c611e9ea",

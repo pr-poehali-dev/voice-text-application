@@ -1,0 +1,26 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedHeaders": {
+        "Access-Control-Allow-Origin": "*"
+      }
+    },
+    {
+      "name": "Определение языка русского текста",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "text": "Привет мир"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "language": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

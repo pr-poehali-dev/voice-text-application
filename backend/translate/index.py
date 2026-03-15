@@ -2,6 +2,8 @@ import json
 import os
 import requests
 
+# v2
+
 def handler(event: dict, context) -> dict:
     """
     Перевод текста через Yandex Translate API.

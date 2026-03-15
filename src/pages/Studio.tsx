@@ -157,7 +157,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
     setIsDetecting(true);
 
     try {
-      const response = await fetch('https://functions.poehali.dev/c454dbcf-7093-4694-ba09-19d92e95974d', {
+      const response = await fetch('https://functions.poehali.dev/cb5de8a5-e4ad-442d-b628-4eb0278f2abc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
