@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,9 @@ import WalletWidget from "@/components/WalletWidget";
 import NotificationBell from "@/components/NotificationBell";
 import type { User } from "./Index";
 
+const TRANSLATE_URL = 'https://functions.poehali.dev/21cfebb4-0617-4d35-bb9a-b99cd72e3912';
+const DETECT_URL = 'https://functions.poehali.dev/cb5de8a5-e4ad-442d-b628-4eb0278f2abc';
+
 interface Voice {
   id: string;
   name: string;
@@ -23,39 +26,25 @@ interface Voice {
   description: string;
 }
 
-const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
-  const [text, setText] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("ru");
-  const [selectedVoice, setSelectedVoice] = useState<string>("alena");
-  const [speed, setSpeed] = useState([1.0]);
-  const [format, setFormat] = useState("mp3");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [isTechnicalMode, setIsTechnicalMode] = useState(false);
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const { toast } = useToast();
-  const detectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+const LANGUAGES = [
+  { code: "ru", name: "Русский", flag: "🇷🇺" },
+  { code: "en", name: "English", flag: "🇬🇧" },
+  { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "fr", name: "Français", flag: "🇫🇷" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪" },
+  { code: "it", name: "Italiano", flag: "🇮🇹" },
+  { code: "pt", name: "Português", flag: "🇵🇹" },
+  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "ja", name: "日本語", flag: "🇯🇵" },
+  { code: "ko", name: "한국어", flag: "🇰🇷" },
+  { code: "ar", name: "العربية", flag: "🇸🇦" },
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳" },
+  { code: "tr", name: "Türkçe", flag: "🇹🇷" },
+  { code: "pl", name: "Polski", flag: "🇵🇱" },
+  { code: "kk", name: "Қазақша", flag: "🇰🇿" },
+];
 
-  const languages = [
-    { code: "ru", name: "Русский", flag: "🇷🇺" },
-    { code: "en", name: "English", flag: "🇬🇧" },
-    { code: "es", name: "Español", flag: "🇪🇸" },
-    { code: "fr", name: "Français", flag: "🇫🇷" },
-    { code: "de", name: "Deutsch", flag: "🇩🇪" },
-    { code: "it", name: "Italiano", flag: "🇮🇹" },
-    { code: "pt", name: "Português", flag: "🇵🇹" },
-    { code: "zh", name: "中文", flag: "🇨🇳" },
-    { code: "ja", name: "日本語", flag: "🇯🇵" },
-    { code: "ko", name: "한국어", flag: "🇰🇷" },
-    { code: "ar", name: "العربية", flag: "🇸🇦" },
-    { code: "hi", name: "हिन्दी", flag: "🇮🇳" },
-    { code: "tr", name: "Türkçe", flag: "🇹🇷" },
-    { code: "pl", name: "Polski", flag: "🇵🇱" },
-    { code: "kk", name: "Қазақша", flag: "🇰🇿" },
-  ];
-
-  const voices: Voice[] = [
+const VOICES: Voice[] = [
     { id: "alena", name: "Алёна", gender: "female", language: "ru", languageName: "Русский", premium: false, description: "Приятный женский голос" },
     { id: "filipp", name: "Филипп", gender: "male", language: "ru", languageName: "Русский", premium: false, description: "Уверенный мужской голос" },
     { id: "ermil", name: "Ермил", gender: "male", language: "ru", languageName: "Русский", premium: false, description: "Спокойный мужской голос" },
@@ -136,10 +125,24 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
     { id: "ainur", name: "Айнұр", gender: "female", language: "kk", languageName: "Қазақша", premium: false, description: "Қазақ әйел дауысы" },
     { id: "madi", name: "Мәди", gender: "male", language: "kk", languageName: "Қазақша", premium: false, description: "Қазақ ер дауысы" },
     { id: "aigerim", name: "Айгерім", gender: "female", language: "kk", languageName: "Қазақша", premium: false, description: "Жұмсақ әйел дауысы" },
-    { id: "arman", name: "Арман", gender: "male", language: "kk", languageName: "Қазақша", premium: false, description: "Күшті ер дауысы" },
-  ];
+  { id: "arman", name: "Арман", gender: "male", language: "kk", languageName: "Қазақша", premium: false, description: "Күшті ер дауысы" },
+];
 
-  const filteredVoices = voices.filter(v => v.language === selectedLanguage);
+const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
+  const [text, setText] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("ru");
+  const [selectedVoice, setSelectedVoice] = useState<string>("alena");
+  const [speed, setSpeed] = useState([1.0]);
+  const [format, setFormat] = useState("mp3");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [isTechnicalMode, setIsTechnicalMode] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const { toast } = useToast();
+  const detectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const filteredVoices = VOICES.filter(v => v.language === selectedLanguage);
   
   const characterCount = text.length;
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
@@ -150,11 +153,11 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
 
   const canGenerate = characterCount > 0 && characterCount <= maxCharacters;
 
-  const detectLanguageNow = useCallback(async (currentText: string) => {
+  const detectLanguageNow = async (currentText: string) => {
     if (!currentText.trim()) return;
     setIsDetecting(true);
     try {
-      const response = await fetch('https://functions.poehali.dev/cb5de8a5-e4ad-442d-b628-4eb0278f2abc', {
+      const response = await fetch(DETECT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: currentText })
@@ -162,11 +165,11 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
       const data = await response.json();
       if (response.ok && data.language) {
         const detectedLang = data.language;
-        if (languages.find(l => l.code === detectedLang)) {
+        if (LANGUAGES.find(l => l.code === detectedLang)) {
           setSelectedLanguage(detectedLang);
-          const voicesForLang = voices.filter(v => v.language === detectedLang && !v.premium);
+          const voicesForLang = VOICES.filter(v => v.language === detectedLang && !v.premium);
           if (voicesForLang.length > 0) setSelectedVoice(voicesForLang[0].id);
-          const langName = languages.find(l => l.code === detectedLang)?.name || detectedLang;
+          const langName = LANGUAGES.find(l => l.code === detectedLang)?.name || detectedLang;
           toast({ title: "Язык определён", description: `Обнаружен ${langName}` });
         }
       }
@@ -175,7 +178,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
     } finally {
       setIsDetecting(false);
     }
-  }, [languages, voices, toast]);
+  };
 
   const handleDetectLanguage = () => {
     detectLanguageNow(text);
@@ -194,7 +197,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
     setIsTranslating(true);
 
     try {
-      const response = await fetch('https://functions.poehali.dev/21cfebb4-0617-4d35-bb9a-b99cd72e3912', {
+      const response = await fetch(TRANSLATE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -211,14 +214,14 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
         setText(data.translated_text);
         setSelectedLanguage(targetLang);
         
-        const voicesForLang = voices.filter(v => v.language === targetLang && !v.premium);
+        const voicesForLang = VOICES.filter(v => v.language === targetLang && !v.premium);
         if (voicesForLang.length > 0) {
           setSelectedVoice(voicesForLang[0].id);
         }
         
         toast({
           title: "Перевод готов!",
-          description: `Текст переведён на ${languages.find(l => l.code === targetLang)?.name}${data.translation_type === 'technical' ? ' (технический режим)' : ''}`
+          description: `Текст переведён на ${LANGUAGES.find(l => l.code === targetLang)?.name}${data.translation_type === 'technical' ? ' (технический режим)' : ''}`
         });
       } else {
         throw new Error(data.error || 'Ошибка перевода');
@@ -243,7 +246,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
       return;
     }
 
-    const selectedVoiceData = voices.find(v => v.id === selectedVoice);
+    const selectedVoiceData = VOICES.find(v => v.id === selectedVoice);
     if (selectedVoiceData?.premium && user.plan === 'free') {
       toast({
         title: "Премиум голос",
@@ -370,7 +373,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {languages.map((lang) => (
+                        {LANGUAGES.map((lang) => (
                           <SelectItem key={lang.code} value={lang.code}>
                             <span className="flex items-center gap-2">
                               <span>{lang.flag}</span>
@@ -442,7 +445,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
                         <SelectValue placeholder="Перевести на..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {languages.filter(l => l.code !== selectedLanguage).map((lang) => (
+                        {LANGUAGES.filter(l => l.code !== selectedLanguage).map((lang) => (
                           <SelectItem key={lang.code} value={lang.code}>
                             {lang.flag} {lang.name}
                           </SelectItem>
