@@ -92,6 +92,7 @@ def handler(event: dict, context) -> dict:
                 }
         
         response = requests.post(url, headers=headers, json=payload, timeout=30)
+        print(f"Yandex API status: {response.status_code}, body: {response.text[:500]}")
         
         if response.status_code != 200:
             error_text = response.text
