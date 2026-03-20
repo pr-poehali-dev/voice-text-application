@@ -37,7 +37,7 @@ const DEMO_USER: User = {
 
 const DEMO_LIMIT = 3;
 
-const Index = () => {
+const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
   const [currentPage, setCurrentPage] = useState<"landing" | "auth" | "studio" | "dashboard" | "admin" | "settings" | "pricing" | "payment">("landing");
   const [user, setUser] = useState<User | null>(null);
   const [demoUsage, setDemoUsage] = useState<DemoUsage>({ generate: 0, translate: 0, download: 0 });
@@ -45,12 +45,18 @@ const Index = () => {
   const [demoLimitFeature, setDemoLimitFeature] = useState<string>("");
 
   useEffect(() => {
+    if (startDemo) {
+      setUser(DEMO_USER);
+      setDemoUsage({ generate: 0, translate: 0, download: 0 });
+      setCurrentPage('studio');
+      return;
+    }
     const savedUser = localStorage.getItem('voiceAppUser');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
       setCurrentPage('studio');
     }
-  }, []);
+  }, [startDemo]);
 
   const handleDemoAction = (feature: keyof DemoUsage): boolean => {
     const current = demoUsage[feature];
