@@ -7,6 +7,7 @@ import AdminPanel from "./AdminPanel";
 import Settings from "./Settings";
 import Pricing from "./Pricing";
 import DemoLimitModal from "@/components/DemoLimitModal";
+import { loadDemoUsage, saveDemoUsage } from "@/lib/demoFingerprint";
 
 export interface User {
   id: number;
@@ -19,11 +20,7 @@ export interface User {
   isDemo?: boolean;
 }
 
-export interface DemoUsage {
-  generate: number;
-  translate: number;
-  download: number;
-}
+export type { DemoUsage } from "@/lib/demoFingerprint";
 
 const DEMO_USER: User = {
   id: 0,
@@ -40,14 +37,14 @@ const DEMO_LIMIT = 3;
 const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
   const [currentPage, setCurrentPage] = useState<"landing" | "auth" | "studio" | "dashboard" | "admin" | "settings" | "pricing" | "payment">("landing");
   const [user, setUser] = useState<User | null>(null);
-  const [demoUsage, setDemoUsage] = useState<DemoUsage>({ generate: 0, translate: 0, download: 0 });
+  const [demoUsage, setDemoUsage] = useState(() => loadDemoUsage());
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [demoLimitFeature, setDemoLimitFeature] = useState<string>("");
 
   useEffect(() => {
     if (startDemo) {
       setUser(DEMO_USER);
-      setDemoUsage({ generate: 0, translate: 0, download: 0 });
+      setDemoUsage(loadDemoUsage());
       setCurrentPage('studio');
       return;
     }
@@ -58,20 +55,22 @@ const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
     }
   }, [startDemo]);
 
-  const handleDemoAction = (feature: keyof DemoUsage): boolean => {
+  const handleDemoAction = (feature: keyof import("@/lib/demoFingerprint").DemoUsage): boolean => {
     const current = demoUsage[feature];
     if (current >= DEMO_LIMIT) {
       setDemoLimitFeature(feature);
       setShowDemoModal(true);
       return false;
     }
-    setDemoUsage(prev => ({ ...prev, [feature]: prev[feature] + 1 }));
+    const updated = { ...demoUsage, [feature]: demoUsage[feature] + 1 };
+    setDemoUsage(updated);
+    saveDemoUsage(updated);
     return true;
   };
 
   const handleStartDemo = () => {
     setUser(DEMO_USER);
-    setDemoUsage({ generate: 0, translate: 0, download: 0 });
+    setDemoUsage(loadDemoUsage());
     setCurrentPage('studio');
   };
 

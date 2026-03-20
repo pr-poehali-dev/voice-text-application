@@ -373,17 +373,19 @@ const Studio = ({ user, onNavigate, onLogout, demoProps }: { user: User; onNavig
       {demoProps && (
         <div className="bg-amber-50 border-b border-amber-200">
           <div className="max-w-7xl mx-auto px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
               <Icon name="Zap" size={18} className="text-amber-600 flex-shrink-0" />
-              <span className="text-sm font-medium text-amber-800">
-                Демо-режим — тариф «Безлимит»:&nbsp;
-                <span className="font-bold">
-                  {demoProps.demoLimit - demoProps.demoUsage.generate} озвучек,&nbsp;
-                  {demoProps.demoLimit - demoProps.demoUsage.translate} переводов,&nbsp;
-                  {demoProps.demoLimit - demoProps.demoUsage.download} скачиваний
-                </span>
-                &nbsp;осталось
-              </span>
+              <span className="text-sm font-medium text-amber-800">Демо-режим:</span>
+              {(["generate", "translate", "download"] as const).map((key) => {
+                const used = demoProps.demoUsage[key];
+                const left = demoProps.demoLimit - used;
+                const labels = { generate: "озвучек", translate: "переводов", download: "скачиваний" };
+                return (
+                  <span key={key} className={`text-sm px-2 py-0.5 rounded-full font-semibold ${left === 0 ? "bg-red-100 text-red-700" : left === 1 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}`}>
+                    {labels[key]}: {used}/{demoProps.demoLimit}
+                  </span>
+                );
+              })}
             </div>
             <Button size="sm" onClick={demoProps.onDemoRegister} className="h-8 px-4 text-sm flex-shrink-0">
               <Icon name="UserPlus" size={14} className="mr-1" />
