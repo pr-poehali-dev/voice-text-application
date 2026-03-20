@@ -20,6 +20,7 @@ interface DemoProps {
   demoUsage: DemoUsage;
   demoLimit: number;
   onDemoAction: (feature: keyof DemoUsage) => boolean;
+  onDemoRegister: () => void;
 }
 
 interface Voice {
@@ -384,7 +385,7 @@ const Studio = ({ user, onNavigate, onLogout, demoProps }: { user: User; onNavig
                 &nbsp;осталось
               </span>
             </div>
-            <Button size="sm" onClick={() => onNavigate('auth')} className="h-8 px-4 text-sm flex-shrink-0">
+            <Button size="sm" onClick={demoProps.onDemoRegister} className="h-8 px-4 text-sm flex-shrink-0">
               <Icon name="UserPlus" size={14} className="mr-1" />
               Купить и зарегистрироваться
             </Button>

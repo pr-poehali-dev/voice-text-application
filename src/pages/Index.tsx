@@ -106,8 +106,13 @@ const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
     setCurrentPage(page);
   };
 
+  const handleDemoRegister = () => {
+    setUser(null);
+    setCurrentPage('auth');
+  };
+
   const demoProps = user?.isDemo
-    ? { demoUsage, demoLimit: DEMO_LIMIT, onDemoAction: handleDemoAction }
+    ? { demoUsage, demoLimit: DEMO_LIMIT, onDemoAction: handleDemoAction, onDemoRegister: handleDemoRegister }
     : undefined;
 
   if (!user && currentPage === "landing") {
@@ -141,7 +146,7 @@ const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
           open={showDemoModal}
           feature={demoLimitFeature}
           onClose={() => setShowDemoModal(false)}
-          onRegister={() => { setShowDemoModal(false); handleLogout(); handleNavigate('auth'); }}
+          onRegister={() => { setShowDemoModal(false); setUser(null); setCurrentPage('auth'); }}
         />
       </>
     );
