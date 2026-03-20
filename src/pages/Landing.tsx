@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,11 +6,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Icon from "@/components/ui/icon";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { loadDemoUsage } from "@/lib/demoFingerprint";
+
+const DEMO_LIMIT = 3;
 
 const Landing = ({ onNavigate, onStartDemo }: { onNavigate: (page: string) => void; onStartDemo: () => void }) => {
   const { t } = useLanguage();
   const [showSamples, setShowSamples] = useState(false);
   const [selectedSampleLang, setSelectedSampleLang] = useState("ru");
+  const [showDemoExhausted, setShowDemoExhausted] = useState(false);
+  const [isDemoExhausted, setIsDemoExhausted] = useState(false);
+
+  useEffect(() => {
+    const usage = loadDemoUsage();
+    const exhausted =
+      usage.generate >= DEMO_LIMIT &&
+      usage.translate >= DEMO_LIMIT &&
+      usage.download >= DEMO_LIMIT;
+    setIsDemoExhausted(exhausted);
+  }, []);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -150,10 +164,22 @@ const Landing = ({ onNavigate, onStartDemo }: { onNavigate: (page: string) => vo
             <Icon name="Mic" size={20} className="mr-2" />
             {t("hero.try_free")}
           </Button>
-          <Button size="lg" variant="outline" className="h-12 px-8 text-lg border-primary text-primary hover:bg-primary hover:text-primary-foreground" onClick={onStartDemo}>
-            <Icon name="Zap" size={20} className="mr-2" />
-            Попробовать без регистрации
-          </Button>
+          {isDemoExhausted ? (
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12 px-8 text-lg border-orange-400 text-orange-600 hover:bg-orange-500 hover:text-white"
+              onClick={() => setShowDemoExhausted(true)}
+            >
+              <Icon name="Lock" size={20} className="mr-2" />
+              Демо исчерпано — купить тариф
+            </Button>
+          ) : (
+            <Button size="lg" variant="outline" className="h-12 px-8 text-lg border-primary text-primary hover:bg-primary hover:text-primary-foreground" onClick={onStartDemo}>
+              <Icon name="Zap" size={20} className="mr-2" />
+              Попробовать без регистрации
+            </Button>
+          )}
           <Button size="lg" variant="ghost" className="h-12 px-8 text-lg" onClick={() => setShowSamples(true)}>
             <Icon name="Play" size={20} className="mr-2" />
             {t("hero.listen_samples")}
@@ -432,6 +458,47 @@ const Landing = ({ onNavigate, onStartDemo }: { onNavigate: (page: string) => vo
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDemoExhausted} onOpenChange={setShowDemoExhausted}>
+        <DialogContent className="max-w-md text-center">
+          <DialogHeader>
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                <Icon name="Lock" size={32} className="text-orange-500" />
+              </div>
+            </div>
+            <DialogTitle className="text-xl font-bold">Демо-попытки исчерпаны</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-muted-foreground">
+              Вы уже использовали все бесплатные попытки на этом устройстве.<br />
+              Чтобы продолжить — выберите тариф и зарегистрируйтесь.
+            </p>
+            <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 border border-primary/20 text-left">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon name="Star" size={18} className="text-primary" />
+                <span className="font-semibold text-primary">Тариф «Безлимит» — 4 990 ₽/мес</span>
+              </div>
+              <ul className="text-sm space-y-2 text-muted-foreground">
+                <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-green-500 flex-shrink-0" />Неограниченные генерации озвучки</li>
+                <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-green-500 flex-shrink-0" />Перевод на 15 языков</li>
+                <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-green-500 flex-shrink-0" />50+ профессиональных голосов</li>
+                <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-green-500 flex-shrink-0" />Скачивание MP3, WAV, OGG</li>
+                <li className="flex items-center gap-2"><Icon name="Check" size={14} className="text-green-500 flex-shrink-0" />История всех проектов</li>
+              </ul>
+            </div>
+            <div className="flex flex-col gap-3 pt-2">
+              <Button className="w-full h-11 text-base font-semibold" onClick={() => { setShowDemoExhausted(false); onNavigate('auth'); }}>
+                <Icon name="UserPlus" size={18} className="mr-2" />
+                Зарегистрироваться и купить тариф
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => setShowDemoExhausted(false)}>
+                Закрыть
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
