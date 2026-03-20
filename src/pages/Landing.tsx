@@ -7,7 +7,7 @@ import Icon from "@/components/ui/icon";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
-const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
+const Landing = ({ onNavigate, onStartDemo }: { onNavigate: (page: string) => void; onStartDemo: () => void }) => {
   const { t } = useLanguage();
   const [showSamples, setShowSamples] = useState(false);
   const [selectedSampleLang, setSelectedSampleLang] = useState("ru");
@@ -150,7 +150,11 @@ const Landing = ({ onNavigate }: { onNavigate: (page: string) => void }) => {
             <Icon name="Mic" size={20} className="mr-2" />
             {t("hero.try_free")}
           </Button>
-          <Button size="lg" variant="outline" className="h-12 px-8 text-lg" onClick={() => setShowSamples(true)}>
+          <Button size="lg" variant="outline" className="h-12 px-8 text-lg border-primary text-primary hover:bg-primary hover:text-primary-foreground" onClick={onStartDemo}>
+            <Icon name="Zap" size={20} className="mr-2" />
+            Попробовать без регистрации
+          </Button>
+          <Button size="lg" variant="ghost" className="h-12 px-8 text-lg" onClick={() => setShowSamples(true)}>
             <Icon name="Play" size={20} className="mr-2" />
             {t("hero.listen_samples")}
           </Button>

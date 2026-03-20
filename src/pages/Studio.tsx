@@ -11,10 +11,16 @@ import Icon from "@/components/ui/icon";
 import { useToast } from "@/hooks/use-toast";
 import WalletWidget from "@/components/WalletWidget";
 import NotificationBell from "@/components/NotificationBell";
-import type { User } from "./Index";
+import type { User, DemoUsage } from "./Index";
 
 const TRANSLATE_URL = 'https://functions.poehali.dev/21cfebb4-0617-4d35-bb9a-b99cd72e3912';
 const DETECT_URL = 'https://functions.poehali.dev/cb5de8a5-e4ad-442d-b628-4eb0278f2abc';
+
+interface DemoProps {
+  demoUsage: DemoUsage;
+  demoLimit: number;
+  onDemoAction: (feature: keyof DemoUsage) => boolean;
+}
 
 interface Voice {
   id: string;
@@ -128,7 +134,7 @@ const VOICES: Voice[] = [
   { id: "arman", name: "Арман", gender: "male", language: "kk", languageName: "Қазақша", premium: false, description: "Күшті ер дауысы" },
 ];
 
-const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
+const Studio = ({ user, onNavigate, onLogout, demoProps }: { user: User; onNavigate: (page: string) => void; onLogout: () => void; demoProps?: DemoProps }) => {
   const [text, setText] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("ru");
   const [selectedVoice, setSelectedVoice] = useState<string>("alena");
@@ -194,6 +200,8 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
       return;
     }
 
+    if (demoProps && !demoProps.onDemoAction('translate')) return;
+
     setIsTranslating(true);
 
     try {
@@ -245,6 +253,8 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
       });
       return;
     }
+
+    if (demoProps && !demoProps.onDemoAction('generate')) return;
 
     const selectedVoiceData = VOICES.find(v => v.id === selectedVoice);
     if (selectedVoiceData?.premium && user.plan === 'free') {
@@ -302,6 +312,7 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
 
   const handleDownload = async (downloadFormat: string) => {
     if (!audioUrl) return;
+    if (demoProps && !demoProps.onDemoAction('download')) return;
     
     const link = document.createElement('a');
     link.href = audioUrl;
@@ -337,12 +348,14 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
             </Badge>
           </div>
           <div className="flex items-center gap-3">
-            <WalletWidget user={user} />
-            <NotificationBell user={user} />
-            <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard')}>
-              <Icon name="LayoutDashboard" size={18} className="mr-2" />
-              Кабинет
-            </Button>
+            {!user.isDemo && <WalletWidget user={user} />}
+            {!user.isDemo && <NotificationBell user={user} />}
+            {!user.isDemo && (
+              <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard')}>
+                <Icon name="LayoutDashboard" size={18} className="mr-2" />
+                Кабинет
+              </Button>
+            )}
             {user.role === 'admin' && (
               <Button variant="ghost" size="sm" onClick={() => onNavigate('admin')}>
                 <Icon name="Shield" size={18} className="mr-2" />
@@ -355,6 +368,29 @@ const Studio = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page:
           </div>
         </div>
       </header>
+
+      {demoProps && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Icon name="Zap" size={18} className="text-amber-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-amber-800">
+                Демо-режим — тариф «Безлимит»:&nbsp;
+                <span className="font-bold">
+                  {demoProps.demoLimit - demoProps.demoUsage.generate} озвучек,&nbsp;
+                  {demoProps.demoLimit - demoProps.demoUsage.translate} переводов,&nbsp;
+                  {demoProps.demoLimit - demoProps.demoUsage.download} скачиваний
+                </span>
+                &nbsp;осталось
+              </span>
+            </div>
+            <Button size="sm" onClick={() => onNavigate('auth')} className="h-8 px-4 text-sm flex-shrink-0">
+              <Icon name="UserPlus" size={14} className="mr-1" />
+              Купить и зарегистрироваться
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

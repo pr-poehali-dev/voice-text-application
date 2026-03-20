@@ -6,6 +6,7 @@ import Dashboard from "./Dashboard";
 import AdminPanel from "./AdminPanel";
 import Settings from "./Settings";
 import Pricing from "./Pricing";
+import DemoLimitModal from "@/components/DemoLimitModal";
 
 export interface User {
   id: number;
@@ -15,11 +16,33 @@ export interface User {
   plan: 'free' | 'basic' | 'pro' | 'unlimited';
   balance: number;
   avatarUrl?: string;
+  isDemo?: boolean;
 }
+
+export interface DemoUsage {
+  generate: number;
+  translate: number;
+  download: number;
+}
+
+const DEMO_USER: User = {
+  id: 0,
+  email: "demo@voiceai.ru",
+  name: "Демо-пользователь",
+  role: "user",
+  plan: "unlimited",
+  balance: 9999,
+  isDemo: true,
+};
+
+const DEMO_LIMIT = 3;
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<"landing" | "auth" | "studio" | "dashboard" | "admin" | "settings" | "pricing" | "payment">("landing");
   const [user, setUser] = useState<User | null>(null);
+  const [demoUsage, setDemoUsage] = useState<DemoUsage>({ generate: 0, translate: 0, download: 0 });
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [demoLimitFeature, setDemoLimitFeature] = useState<string>("");
 
   useEffect(() => {
     const savedUser = localStorage.getItem('voiceAppUser');
@@ -29,6 +52,23 @@ const Index = () => {
     }
   }, []);
 
+  const handleDemoAction = (feature: keyof DemoUsage): boolean => {
+    const current = demoUsage[feature];
+    if (current >= DEMO_LIMIT) {
+      setDemoLimitFeature(feature);
+      setShowDemoModal(true);
+      return false;
+    }
+    setDemoUsage(prev => ({ ...prev, [feature]: prev[feature] + 1 }));
+    return true;
+  };
+
+  const handleStartDemo = () => {
+    setUser(DEMO_USER);
+    setDemoUsage({ generate: 0, translate: 0, download: 0 });
+    setCurrentPage('studio');
+  };
+
   const handleLogin = (userData: User, isNewUser: boolean = false) => {
     setUser(userData);
     localStorage.setItem('voiceAppUser', JSON.stringify(userData));
@@ -36,8 +76,8 @@ const Index = () => {
     
     if (isNewUser) {
       setTimeout(() => {
-        if ((window as any).addNotification) {
-          (window as any).addNotification({
+        if ((window as unknown as { addNotification?: (n: object) => void }).addNotification) {
+          (window as unknown as { addNotification: (n: object) => void }).addNotification({
             title: "Добро пожаловать в наше веб-приложение!",
             message: "Желаем плодотворной работы.",
             type: "success",
@@ -52,6 +92,7 @@ const Index = () => {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('voiceAppUser');
+    setDemoUsage({ generate: 0, translate: 0, download: 0 });
     setCurrentPage('landing');
   };
 
@@ -59,8 +100,12 @@ const Index = () => {
     setCurrentPage(page);
   };
 
+  const demoProps = user?.isDemo
+    ? { demoUsage, demoLimit: DEMO_LIMIT, onDemoAction: handleDemoAction }
+    : undefined;
+
   if (!user && currentPage === "landing") {
-    return <Landing onNavigate={handleNavigate} />;
+    return <Landing onNavigate={handleNavigate} onStartDemo={handleStartDemo} />;
   }
 
   if (!user && currentPage === "auth") {
@@ -68,23 +113,35 @@ const Index = () => {
   }
 
   if (user) {
-    switch (currentPage) {
-      case "studio":
-        return <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
-      case "dashboard":
-        return <Dashboard user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
-      case "admin":
-        return user.role === 'admin' ? <AdminPanel user={user} onNavigate={handleNavigate} onLogout={handleLogout} /> : <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
-      case "settings":
-        return <Settings user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
-      case "pricing":
-        return <Pricing user={user} onNavigate={handleNavigate} />;
-      default:
-        return <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
-    }
+    return (
+      <>
+        {(() => {
+          switch (currentPage) {
+            case "studio":
+              return <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} demoProps={demoProps} />;
+            case "dashboard":
+              return <Dashboard user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
+            case "admin":
+              return user.role === 'admin' ? <AdminPanel user={user} onNavigate={handleNavigate} onLogout={handleLogout} /> : <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} demoProps={demoProps} />;
+            case "settings":
+              return <Settings user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
+            case "pricing":
+              return <Pricing user={user} onNavigate={handleNavigate} />;
+            default:
+              return <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} demoProps={demoProps} />;
+          }
+        })()}
+        <DemoLimitModal
+          open={showDemoModal}
+          feature={demoLimitFeature}
+          onClose={() => setShowDemoModal(false)}
+          onRegister={() => { setShowDemoModal(false); handleLogout(); handleNavigate('auth'); }}
+        />
+      </>
+    );
   }
 
-  return <Landing onNavigate={handleNavigate} />;
+  return <Landing onNavigate={handleNavigate} onStartDemo={handleStartDemo} />;
 };
 
 export default Index;
