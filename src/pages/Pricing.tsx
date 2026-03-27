@@ -101,6 +101,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
           headers: {
             "Content-Type": "application/json",
             "X-User-Id": user.id.toString(),
+            "X-User-Email": user.email,
           },
           body: JSON.stringify({ plan: planKey }),
         }
