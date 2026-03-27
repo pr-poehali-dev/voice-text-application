@@ -1,6 +1,7 @@
 import json
 import os
-import psycopg2  # noqa
+import psycopg2
+from datetime import datetime, timedelta
 
 
 def handler(event: dict, context) -> dict:
@@ -49,12 +50,13 @@ def handler(event: dict, context) -> dict:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             try:
+                new_expires = (datetime.utcnow() + timedelta(days=30)).isoformat()
                 cur.execute(
-                    "UPDATE users SET plan = %s WHERE id = %s",
-                    (plan_db_id, int(user_id))
+                    "UPDATE users SET plan = %s, plan_expires_at = %s WHERE id = %s",
+                    (plan_db_id, new_expires, int(user_id))
                 )
                 conn.commit()
-                print(f"[webhook] Тариф {plan_db_id} успешно активирован для user_id={user_id}")
+                print(f"[webhook] Тариф {plan_db_id} активирован для user_id={user_id}, expires={new_expires}")
             except Exception as e:
                 conn.rollback()
                 print(f"[webhook] Ошибка обновления тарифа: {e}")

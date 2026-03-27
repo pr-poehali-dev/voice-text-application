@@ -1,6 +1,7 @@
 import json
 import os
 import psycopg2
+from datetime import datetime, timedelta
 
 def handler(event: dict, context) -> dict:
     """
@@ -184,12 +185,15 @@ def handler(event: dict, context) -> dict:
                         'body': json.dumps({'error': 'Invalid plan'}),
                         'isBase64Encoded': False
                     }
-                
+
+                paid_plans = ['basic', 'pro', 'unlimited']
+                new_expires = (datetime.utcnow() + timedelta(days=30)).isoformat() if new_plan in paid_plans else None
+
                 cur.execute("""
                     UPDATE users
-                    SET plan = %s, updated_at = CURRENT_TIMESTAMP
+                    SET plan = %s, plan_expires_at = %s, updated_at = CURRENT_TIMESTAMP
                     WHERE id = %s
-                """, (new_plan, int(user_id)))
+                """, (new_plan, new_expires, int(user_id)))
                 
             elif action == 'update_role':
                 new_role = body.get('role')

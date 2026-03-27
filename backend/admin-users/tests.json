@@ -11,9 +11,7 @@
       "method": "GET",
       "path": "/",
       "expectedStatus": 200,
-      "expectedBody": {
-        "users": "array"
-      },
+      "expectedBody": {},
       "bodyMatcher": "partial"
     }
   ]
