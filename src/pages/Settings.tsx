@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import Icon from "@/components/ui/icon";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "./Index";
+
+const PAYMENT_URL = "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8";
 
 const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
   const [name, setName] = useState(user.name);
@@ -20,13 +23,74 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || '');
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [autoRenew, setAutoRenew] = useState(false);
+  const [autoRenewLoading, setAutoRenewLoading] = useState(false);
+  const [renewNowLoading, setRenewNowLoading] = useState(false);
+  const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const planNames = {
+  const planNames: Record<string, string> = {
     free: 'Бесплатный',
     basic: 'Базовый',
     pro: 'Профи',
     unlimited: 'Безлимит'
+  };
+
+  const PAID_PLANS = ['basic', 'pro', 'unlimited'];
+
+  useEffect(() => {
+    if (!PAID_PLANS.includes(user.plan)) return;
+    fetch(`${PAYMENT_URL}?action=subscription`, {
+      headers: { 'X-User-Id': String(user.id), 'X-User-Email': user.email }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.error) {
+          setAutoRenew(data.auto_renew);
+          setPlanExpiresAt(data.plan_expires_at);
+        }
+      })
+      .catch(() => {});
+  }, [user.id]);
+
+  const handleToggleAutoRenew = async (enabled: boolean) => {
+    setAutoRenewLoading(true);
+    try {
+      const resp = await fetch(`${PAYMENT_URL}?action=set_auto_renew`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-User-Id': String(user.id), 'X-User-Email': user.email },
+        body: JSON.stringify({ enabled })
+      });
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      setAutoRenew(enabled);
+      toast({ title: enabled ? 'Автопродление включено' : 'Автопродление отключено' });
+    } catch (e) {
+      toast({ title: 'Ошибка', description: e instanceof Error ? e.message : 'Не удалось изменить настройку', variant: 'destructive' });
+    } finally {
+      setAutoRenewLoading(false);
+    }
+  };
+
+  const handleRenewNow = async () => {
+    setRenewNowLoading(true);
+    try {
+      const resp = await fetch(`${PAYMENT_URL}?action=renew_now`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-User-Id': String(user.id), 'X-User-Email': user.email }
+      });
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      setPlanExpiresAt(data.plan_expires_at);
+      toast({
+        title: 'Тариф продлён',
+        description: `Списано ${data.amount_charged}₽. Баланс: ${data.new_balance}₽`
+      });
+    } catch (e) {
+      toast({ title: 'Ошибка продления', description: e instanceof Error ? e.message : 'Недостаточно средств', variant: 'destructive' });
+    } finally {
+      setRenewNowLoading(false);
+    }
   };
 
   const handleUpdateProfile = async () => {
@@ -380,14 +444,62 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
                   Тарифный план
                 </CardTitle>
                 <CardDescription>
-                  Текущий план: <strong>{planNames[user.plan]}</strong>
+                  Текущий план: <strong>{planNames[user.plan] || user.plan}</strong>
+                  {planExpiresAt && (
+                    <span className="ml-2 text-muted-foreground">
+                      · до {new Date(planExpiresAt).toLocaleDateString('ru-RU')}
+                    </span>
+                  )}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <Button onClick={() => onNavigate('pricing')} className="w-full">
                   <Icon name="Sparkles" size={16} className="mr-2" />
                   Изменить тариф
                 </Button>
+
+                {PAID_PLANS.includes(user.plan) && (
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">Автопродление с кошелька</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Тариф будет продлён автоматически при наступлении даты
+                        </p>
+                      </div>
+                      <Switch
+                        checked={autoRenew}
+                        onCheckedChange={handleToggleAutoRenew}
+                        disabled={autoRenewLoading}
+                      />
+                    </div>
+
+                    <div className="border-t pt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={handleRenewNow}
+                        disabled={renewNowLoading}
+                      >
+                        {renewNowLoading ? (
+                          <>
+                            <Icon name="Loader2" size={15} className="mr-2 animate-spin" />
+                            Списание...
+                          </>
+                        ) : (
+                          <>
+                            <Icon name="RefreshCw" size={15} className="mr-2" />
+                            Продлить прямо сейчас
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        Средства спишутся с кошелька, счётчик символов сбросится
+                      </p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

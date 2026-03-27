@@ -13,6 +13,23 @@
       "expectedStatus": 400,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET subscription без user_id — ошибка 401",
+      "method": "GET",
+      "path": "/?action=subscription",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST set_auto_renew без user_id — ошибка 401",
+      "method": "POST",
+      "path": "/?action=set_auto_renew",
+      "body": {"enabled": true},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
     }
   ]
 }
