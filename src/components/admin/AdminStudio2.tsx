@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,88 @@ const AdminStudio2 = () => {
   const [recognizedText, setRecognizedText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
+  const shouldRestartRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      shouldRestartRef.current = false;
+      recognitionRef.current?.stop();
+    };
+  }, []);
+
+  const startRecognition = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = 'ru-RU';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript + ' ';
+        }
+      }
+      if (finalTranscript) {
+        setRecognizedText(prev => (prev + ' ' + finalTranscript).trim());
+      }
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onerror = (event: any) => {
+      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+        return;
+      }
+      if (event.error !== 'aborted') {
+        toast({ title: 'Ошибка', description: 'Произошла ошибка при распознавании', variant: 'destructive' });
+      }
+    };
+
+    recognition.onend = () => {
+      if (shouldRestartRef.current) {
+        try {
+          recognition.start();
+        } catch {
+          setTimeout(() => {
+            if (shouldRestartRef.current) recognition.start();
+          }, 300);
+        }
+      } else {
+        setIsListening(false);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const handleToggle = () => {
+    if (isListening) {
+      shouldRestartRef.current = false;
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      toast({ title: 'Остановлено', description: 'Распознавание речи остановлено' });
+    } else {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        toast({ title: 'Не поддерживается', description: 'Ваш браузер не поддерживает распознавание речи', variant: 'destructive' });
+        return;
+      }
+      shouldRestartRef.current = true;
+      startRecognition();
+      toast({ title: 'Слушаю...', description: 'Начните говорить' });
+    }
+  };
 
   return (
     <Card>
@@ -28,55 +110,7 @@ const AdminStudio2 = () => {
               size="lg"
               variant={isListening ? "destructive" : "default"}
               className="w-32 h-32 rounded-full"
-              onClick={() => {
-                if (isListening) {
-                  setIsListening(false);
-                  toast({ title: 'Остановлено', description: 'Распознавание речи остановлено' });
-                } else {
-                  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                    toast({ title: 'Не поддерживается', description: 'Ваш браузер не поддерживает распознавание речи', variant: 'destructive' });
-                    return;
-                  }
-
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                  const recognition = new SpeechRecognition();
-
-                  recognition.lang = 'ru-RU';
-                  recognition.continuous = true;
-                  recognition.interimResults = true;
-
-                  recognition.onstart = () => {
-                    setIsListening(true);
-                    toast({ title: 'Слушаю...', description: 'Начните говорить' });
-                  };
-
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  recognition.onresult = (event: any) => {
-                    let finalTranscript = '';
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                      const transcript = event.results[i][0].transcript;
-                      if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' ';
-                      }
-                    }
-                    if (finalTranscript) {
-                      setRecognizedText(prev => (prev + ' ' + finalTranscript).trim());
-                    }
-                  };
-
-                  recognition.onerror = () => {
-                    setIsListening(false);
-                    toast({ title: 'Ошибка', description: 'Произошла ошибка при распознавании', variant: 'destructive' });
-                  };
-
-                  recognition.onend = () => {
-                    setIsListening(false);
-                  };
-
-                  recognition.start();
-                }
-              }}
+              onClick={handleToggle}
             >
               <Icon
                 name={isListening ? "MicOff" : "Mic"}
