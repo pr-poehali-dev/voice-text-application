@@ -2,12 +2,12 @@
 import os
 import requests
 
-WALLET_BASE_URL = "https://maxisoftzab.ru/api/wallet"
+WALLET_FUNCTION_URL = "https://functions.poehali.dev/8a886097-3bd9-4d94-8c19-d19ca3f3acbd"
 
 
 def _headers() -> dict:
     return {
-        "X-API-Key": os.environ.get("MAXISOFTZAB_API_KEY", ""),
+        "X-Api-Key": os.environ.get("MAXISOFTZAB_API_KEY", ""),
         "Content-Type": "application/json"
     }
 
@@ -15,8 +15,8 @@ def _headers() -> dict:
 def get_balance(email: str) -> dict:
     """Получает баланс кошелька пользователя по email"""
     resp = requests.get(
-        f"{WALLET_BASE_URL}/balance",
-        params={"email": email},
+        WALLET_FUNCTION_URL,
+        params={"action": "balance", "email": email},
         headers=_headers(),
         timeout=10
     )
@@ -31,7 +31,8 @@ def get_balance(email: str) -> dict:
 def charge_balance(email: str, amount: float, plan: str) -> dict:
     """Списывает средства с общего кошелька за тариф"""
     resp = requests.post(
-        f"{WALLET_BASE_URL}/charge",
+        WALLET_FUNCTION_URL,
+        params={"action": "deduct"},
         json={
             "email": email,
             "amount": amount,
