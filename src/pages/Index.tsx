@@ -7,6 +7,9 @@ import AdminPanel from "./AdminPanel";
 import Settings from "./Settings";
 import Pricing from "./Pricing";
 import DemoLimitModal from "@/components/DemoLimitModal";
+import PlanBanner from "@/components/PlanBanner";
+import PlanBlockOverlay from "@/components/PlanBlockOverlay";
+import { usePlanStatus } from "@/hooks/usePlanStatus";
 import { loadDemoUsage, saveDemoUsage } from "@/lib/demoFingerprint";
 
 export interface User {
@@ -40,6 +43,7 @@ const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
   const [demoUsage, setDemoUsage] = useState(() => loadDemoUsage());
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [demoLimitFeature, setDemoLimitFeature] = useState<string>("");
+  const planStatus = usePlanStatus(user);
 
   useEffect(() => {
     if (startDemo) {
@@ -122,9 +126,12 @@ const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
     return <Auth onLogin={handleLogin} onNavigate={handleNavigate} />;
   }
 
+  const allowedWhenBlocked = currentPage === 'pricing' || currentPage === 'settings';
+
   if (user) {
     return (
       <>
+        <PlanBanner planStatus={planStatus} onNavigate={handleNavigate} />
         {(() => {
           switch (currentPage) {
             case "studio":
@@ -141,6 +148,9 @@ const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
               return <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} demoProps={demoProps} />;
           }
         })()}
+        {planStatus.isBlocked && !allowedWhenBlocked && (
+          <PlanBlockOverlay onNavigate={handleNavigate} />
+        )}
         <DemoLimitModal
           open={showDemoModal}
           feature={demoLimitFeature}
