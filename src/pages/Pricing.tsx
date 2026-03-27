@@ -1,14 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "./Index";
 
+const PAYMENT_URL = "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8";
+
 const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) => void }) => {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; planKey: string; price: number } | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const { toast } = useToast();
+
+  const fetchBalance = async () => {
+    setIsLoadingBalance(true);
+    try {
+      const resp = await fetch(`${PAYMENT_URL}?action=wallet`, {
+        headers: { "X-User-Id": user.id.toString(), "X-User-Email": user.email },
+      });
+      const data = await resp.json();
+      if (resp.ok) setWalletBalance(data.wallet?.balance ?? 0);
+    } catch {
+      setWalletBalance(null);
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedPlan) fetchBalance();
+  }, [selectedPlan]);
+
+  const handlePayFromWallet = async () => {
+    if (!selectedPlan) return;
+    setIsProcessing(selectedPlan.id);
+    try {
+      const response = await fetch(`${PAYMENT_URL}?action=charge`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": user.id.toString(),
+          "X-User-Email": user.email,
+        },
+        body: JSON.stringify({ plan: selectedPlan.planKey }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSelectedPlan(null);
+        toast({ title: "Успешно!", description: `Тариф "${selectedPlan.name}" оплачен. Списано ${selectedPlan.price} ₽` });
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast({ title: "Ошибка", description: data.error || "Не удалось оплатить тариф", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Ошибка", description: "Не удалось оплатить тариф", variant: "destructive" });
+    } finally {
+      setIsProcessing(null);
+    }
+  };
   const plans = [
     {
       id: 'free',
@@ -86,65 +139,13 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
     }
   ];
 
-  const handleSelectPlan = async (planId: string, planKey: string, price: number) => {
-    if (planId === user.plan || planId === 'free') {
-      return;
-    }
-
-    setIsProcessing(planId);
-
-    try {
-      const response = await fetch(
-        "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8?action=charge",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-User-Id": user.id.toString(),
-            "X-User-Email": user.email,
-          },
-          body: JSON.stringify({ plan: planKey }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Успешно!",
-          description: `Тариф "${plans.find(p => p.id === planId)?.name}" успешно оплачен. Списано ${price} ₽`,
-        });
-        
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        if (data.error?.includes("Недостаточно средств")) {
-          toast({
-            title: "Недостаточно средств",
-            description: `Пополните баланс. Требуется: ${price} ₽, доступно: ${data.balance || 0} ₽`,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Ошибка",
-            description: data.error || "Не удалось оплатить тариф",
-            variant: "destructive",
-          });
-        }
-      }
-    } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось оплатить тариф",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(null);
-    }
+  const handleSelectPlan = (planId: string, planName: string, planKey: string, price: number) => {
+    if (planId === user.plan || planId === 'free') return;
+    setSelectedPlan({ id: planId, name: planName, planKey, price });
   };
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -207,19 +208,10 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
                 <Button
                   className="w-full mt-4"
                   variant={plan.id === user.plan ? 'outline' : 'default'}
-                  disabled={plan.id === user.plan || isProcessing === plan.id}
-                  onClick={() => handleSelectPlan(plan.id, plan.planKey, plan.price)}
+                  disabled={plan.id === user.plan}
+                  onClick={() => handleSelectPlan(plan.id, plan.name, plan.planKey, plan.price)}
                 >
-                  {isProcessing === plan.id ? (
-                    <>
-                      <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
-                      Обработка...
-                    </>
-                  ) : plan.id === user.plan ? (
-                    'Текущий тариф'
-                  ) : (
-                    plan.buttonText
-                  )}
+                  {plan.id === user.plan ? 'Текущий тариф' : plan.buttonText}
                 </Button>
               </CardContent>
             </Card>
@@ -280,6 +272,82 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
         </div>
       </div>
     </div>
+
+    {/* Диалог выбора способа оплаты */}
+    <Dialog open={!!selectedPlan} onOpenChange={(open) => !open && setSelectedPlan(null)}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl">Оплата тарифа «{selectedPlan?.name}»</DialogTitle>
+          <DialogDescription>Выберите удобный способ оплаты</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-2">
+          {/* Кошелёк */}
+          <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-semibold">
+                <Icon name="Wallet" size={18} className="text-primary" />
+                Общий кошелёк
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {isLoadingBalance ? (
+                  <Icon name="Loader2" size={14} className="animate-spin" />
+                ) : walletBalance !== null ? (
+                  <span className={walletBalance >= (selectedPlan?.price ?? 0) ? "text-green-600 font-semibold" : "text-red-500 font-semibold"}>
+                    {walletBalance.toFixed(2)} ₽
+                  </span>
+                ) : '—'}
+              </div>
+            </div>
+
+            {walletBalance !== null && walletBalance < (selectedPlan?.price ?? 0) && (
+              <div className="text-xs text-red-500 flex items-center gap-1">
+                <Icon name="AlertCircle" size={12} />
+                Не хватает {((selectedPlan?.price ?? 0) - walletBalance).toFixed(2)} ₽ — пополните на maxisoftzab.ru
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                disabled={isProcessing !== null || isLoadingBalance || walletBalance === null || walletBalance < (selectedPlan?.price ?? 0)}
+                onClick={handlePayFromWallet}
+              >
+                {isProcessing ? (
+                  <><Icon name="Loader2" size={16} className="mr-2 animate-spin" />Обработка...</>
+                ) : (
+                  <>Оплатить {selectedPlan?.price} ₽</>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchBalance}
+                disabled={isLoadingBalance}
+                title="Обновить баланс"
+              >
+                <Icon name="RefreshCw" size={14} className={isLoadingBalance ? "animate-spin" : ""} />
+              </Button>
+            </div>
+          </div>
+
+          {/* Пополнить кошелёк */}
+          <a href="https://maxisoftzab.ru" target="_blank" rel="noopener noreferrer" className="block">
+            <div className="rounded-xl border p-4 flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer">
+              <div className="flex items-center gap-2">
+                <Icon name="PlusCircle" size={18} className="text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Пополнить кошелёк</p>
+                  <p className="text-xs text-muted-foreground">Перейти на maxisoftzab.ru</p>
+                </div>
+              </div>
+              <Icon name="ExternalLink" size={16} className="text-muted-foreground" />
+            </div>
+          </a>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
