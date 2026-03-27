@@ -20,6 +20,7 @@ def get_balance(email: str) -> dict:
         headers=_headers(),
         timeout=10
     )
+    print(f"[wallet] get_balance status={resp.status_code} body={resp.text[:300]}")
     resp.raise_for_status()
     data = resp.json()
     return {
@@ -41,6 +42,7 @@ def charge_balance(email: str, amount: float, plan: str) -> dict:
         headers=_headers(),
         timeout=10
     )
+    print(f"[wallet] charge_balance status={resp.status_code} body={resp.text[:300]}")
     data = resp.json()
 
     if not data.get("success"):
