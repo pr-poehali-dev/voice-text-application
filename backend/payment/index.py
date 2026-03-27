@@ -105,6 +105,17 @@ def handler(event: dict, context) -> dict:
                 "confirmation": {"type": "redirect", "return_url": return_url},
                 "capture": True,
                 "description": plan_name,
+                "receipt": {
+                    "customer": {"email": user_email},
+                    "items": [{
+                        "description": plan_name,
+                        "quantity": "1.00",
+                        "amount": {"value": str(amount) + ".00", "currency": "RUB"},
+                        "vat_code": 1,
+                        "payment_mode": "full_payment",
+                        "payment_subject": "service"
+                    }]
+                },
                 "metadata": {
                     "user_id": str(user_id),
                     "user_email": user_email,
