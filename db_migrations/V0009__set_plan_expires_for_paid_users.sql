@@ -1,0 +1,1 @@
+UPDATE users SET plan_expires_at = NOW() + INTERVAL '30 days' WHERE plan != 'free' AND plan_expires_at IS NULL;
