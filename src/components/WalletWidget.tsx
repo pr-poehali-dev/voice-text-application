@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import Icon from "@/components/ui/icon";
+import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/pages/Index";
 
 interface Wallet {
@@ -23,8 +24,11 @@ interface WalletWidgetProps {
 const WalletWidget = ({ user }: WalletWidgetProps) => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { toast } = useToast();
 
-  const fetchWallet = async () => {
+  const fetchWallet = async (showRefresh = false) => {
+    if (showRefresh) setIsRefreshing(true);
     try {
       const response = await fetch(
         "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8/wallet",
@@ -37,14 +41,26 @@ const WalletWidget = ({ user }: WalletWidgetProps) => {
         }
       );
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         setWallet(data.wallet);
+        if (showRefresh) toast({ title: "Баланс обновлён" });
+      } else {
+        throw new Error(data.error || "Ошибка сервера");
       }
     } catch (error) {
       console.error("Error fetching wallet:", error);
+      if (showRefresh) {
+        toast({
+          title: "Не удалось обновить баланс",
+          description: error instanceof Error ? error.message : "Проверьте подключение",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -105,9 +121,14 @@ const WalletWidget = ({ user }: WalletWidgetProps) => {
             </a>
           </div>
 
-          <Button variant="outline" className="w-full" onClick={fetchWallet}>
-            <Icon name="RefreshCw" size={16} className="mr-2" />
-            Обновить баланс
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={isRefreshing}
+            onClick={() => fetchWallet(true)}
+          >
+            <Icon name="RefreshCw" size={16} className={`mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Обновляю..." : "Обновить баланс"}
           </Button>
         </div>
       </DialogContent>
