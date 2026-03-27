@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "CRON trigger — запуск автопродления",
+      "method": "POST",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

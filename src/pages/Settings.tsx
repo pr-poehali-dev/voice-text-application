@@ -38,6 +38,14 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
 
   const PAID_PLANS = ['basic', 'pro', 'unlimited'];
 
+  const getDaysLeft = (expiresAt: string | null): number | null => {
+    if (!expiresAt) return null;
+    const diff = new Date(expiresAt).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
+  const daysLeft = getDaysLeft(planExpiresAt);
+
   useEffect(() => {
     if (!PAID_PLANS.includes(user.plan)) return;
     fetch(`${PAYMENT_URL}?action=subscription`, {
@@ -460,11 +468,34 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
 
                 {PAID_PLANS.includes(user.plan) && (
                   <div className="border rounded-lg p-4 space-y-4">
+
+                    {/* Счётчик дней */}
+                    {planExpiresAt && daysLeft !== null && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Осталось дней</span>
+                          <span className={`font-semibold ${daysLeft <= 3 ? 'text-destructive' : daysLeft <= 7 ? 'text-orange-500' : 'text-foreground'}`}>
+                            {daysLeft === 0 ? 'Истекает сегодня' : `${daysLeft} ${daysLeft === 1 ? 'день' : daysLeft < 5 ? 'дня' : 'дней'}`}
+                          </span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${daysLeft <= 3 ? 'bg-destructive' : daysLeft <= 7 ? 'bg-orange-500' : 'bg-primary'}`}
+                            style={{ width: `${Math.min(100, (daysLeft / 30) * 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          до {new Date(planExpiresAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Переключатель автопродления */}
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-sm">Автопродление с кошелька</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Тариф будет продлён автоматически при наступлении даты
+                          Тариф продлится автоматически в день окончания
                         </p>
                       </div>
                       <Switch
@@ -474,6 +505,7 @@ const Settings = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (pag
                       />
                     </div>
 
+                    {/* Продлить вручную */}
                     <div className="border-t pt-3">
                       <Button
                         variant="outline"
