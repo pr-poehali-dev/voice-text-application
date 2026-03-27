@@ -95,7 +95,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
 
     try {
       const response = await fetch(
-        "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8/charge",
+        "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8?action=charge",
         {
           method: "POST",
           headers: {

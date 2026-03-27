@@ -31,7 +31,7 @@ const WalletWidget = ({ user }: WalletWidgetProps) => {
     if (showRefresh) setIsRefreshing(true);
     try {
       const response = await fetch(
-        "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8/wallet",
+        "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8?action=wallet",
         {
           method: "GET",
           headers: {

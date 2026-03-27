@@ -35,6 +35,8 @@ def handler(event: dict, context) -> dict:
     """
     method = event.get('httpMethod', 'GET')
     path = event.get('path', '')
+    params = event.get('queryStringParameters') or {}
+    action = params.get('action', '')
 
     if method == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
@@ -43,8 +45,8 @@ def handler(event: dict, context) -> dict:
     user_email = headers.get('X-User-Email') or headers.get('x-user-email')
     user_id = headers.get('X-User-Id') or headers.get('x-user-id')
 
-    # Получить баланс
-    if '/wallet' in path and method == 'GET':
+    # Получить баланс: GET ?action=wallet  или  GET /wallet
+    if method == 'GET' and (action == 'wallet' or '/wallet' in path):
         if not user_email:
             return err('Не передан email пользователя', 401)
         try:
@@ -53,8 +55,8 @@ def handler(event: dict, context) -> dict:
         except Exception as e:
             return err(str(e), 500)
 
-    # Списать за тариф
-    if '/charge' in path and method == 'POST':
+    # Списать за тариф: POST ?action=charge  или  POST /charge
+    if method == 'POST' and (action == 'charge' or '/charge' in path):
         if not user_email:
             return err('Не передан email пользователя', 401)
         try:
