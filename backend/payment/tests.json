@@ -7,10 +7,10 @@
       "expectedStatus": 200
     },
     {
-      "name": "GET без payment_id — ЮKassa не настроена (500)",
+      "name": "GET без action — неизвестное действие",
       "method": "GET",
       "path": "/",
-      "expectedStatus": 500,
+      "expectedStatus": 400,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
     }

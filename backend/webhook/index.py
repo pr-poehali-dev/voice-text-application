@@ -1,16 +1,15 @@
 import json
 import os
-import hmac
-import hashlib
+import psycopg2  # noqa
+
 
 def handler(event: dict, context) -> dict:
     """
-    Webhook для получения уведомлений от ЮKassa о статусе платежей
-    
-    POST /webhook - обработка уведомления от ЮKassa
+    Webhook от ЮKassa: при успешной оплате активирует тариф пользователю в БД.
+    POST / — обработка уведомления от ЮKassa
     """
     method = event.get('httpMethod', 'POST')
-    
+
     if method == 'OPTIONS':
         return {
             'statusCode': 200,
@@ -21,51 +20,55 @@ def handler(event: dict, context) -> dict:
             },
             'body': ''
         }
-    
+
     if method != 'POST':
-        return {
-            'statusCode': 405,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({'error': 'Method not allowed'})
-        }
-    
-    try:
-        body = event.get('body', '{}')
-        notification = json.loads(body)
-        
-        event_type = notification.get('event')
-        payment_object = notification.get('object', {})
-        
-        payment_id = payment_object.get('id')
-        status = payment_object.get('status')
-        paid = payment_object.get('paid', False)
-        amount = payment_object.get('amount', {}).get('value')
-        metadata = payment_object.get('metadata', {})
-        
-        if event_type == 'payment.succeeded' and paid:
-            plan_name = metadata.get('plan_name', 'Неизвестный план')
-            
-            print(f'Успешный платёж: {payment_id}')
-            print(f'План: {plan_name}')
-            print(f'Сумма: {amount} RUB')
-            print(f'Метаданные: {metadata}')
-        
-        elif event_type == 'payment.canceled':
-            print(f'Платёж отменён: {payment_id}')
-        
-        elif event_type == 'payment.waiting_for_capture':
-            print(f'Платёж ожидает подтверждения: {payment_id}')
-        
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({'status': 'ok'})
-        }
-        
-    except Exception as e:
-        print(f'Ошибка обработки webhook: {str(e)}')
-        return {
-            'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({'error': str(e)})
-        }
+        return {'statusCode': 405, 'body': json.dumps({'error': 'Method not allowed'})}
+
+    body = event.get('body', '{}')
+    notification = json.loads(body)
+
+    event_type = notification.get('event')
+    payment_object = notification.get('object', {})
+
+    payment_id = payment_object.get('id')
+    status = payment_object.get('status')
+    paid = payment_object.get('paid', False)
+    amount = payment_object.get('amount', {}).get('value')
+    metadata = payment_object.get('metadata', {})
+
+    print(f"[webhook] event={event_type} payment_id={payment_id} paid={paid} metadata={metadata}")
+
+    if event_type == 'payment.succeeded' and paid:
+        user_id = metadata.get('user_id')
+        user_email = metadata.get('user_email')
+        plan_db_id = metadata.get('plan_db_id')
+
+        print(f"[webhook] Активирую тариф: user_id={user_id} email={user_email} plan={plan_db_id} amount={amount}")
+
+        if user_id and plan_db_id:
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            cur = conn.cursor()
+            try:
+                cur.execute(
+                    "UPDATE users SET plan = %s WHERE id = %s",
+                    (plan_db_id, int(user_id))
+                )
+                conn.commit()
+                print(f"[webhook] Тариф {plan_db_id} успешно активирован для user_id={user_id}")
+            except Exception as e:
+                conn.rollback()
+                print(f"[webhook] Ошибка обновления тарифа: {e}")
+            finally:
+                cur.close()
+                conn.close()
+        else:
+            print(f"[webhook] Не хватает метаданных: user_id={user_id} plan_db_id={plan_db_id}")
+
+    elif event_type == 'payment.canceled':
+        print(f"[webhook] Платёж отменён: {payment_id}")
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps({'status': 'ok'})
+    }

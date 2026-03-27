@@ -14,6 +14,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
   const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; planKey: string; price: number } | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [isPayingByCard, setIsPayingByCard] = useState(false);
   const { toast } = useToast();
 
   const fetchBalance = async () => {
@@ -142,6 +143,38 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
   const handleSelectPlan = (planId: string, planName: string, planKey: string, price: number) => {
     if (planId === user.plan || planId === 'free') return;
     setSelectedPlan({ id: planId, name: planName, planKey, price });
+  };
+
+  const handlePayByCard = async () => {
+    if (!selectedPlan) return;
+    setIsPayingByCard(true);
+    try {
+      const returnUrl = window.location.href;
+      const response = await fetch(`${PAYMENT_URL}?action=create_payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Id": user.id.toString(),
+          "X-User-Email": user.email,
+        },
+        body: JSON.stringify({
+          amount: selectedPlan.price,
+          plan: selectedPlan.planKey,
+          plan_name: `Тариф «${selectedPlan.name}»`,
+          return_url: returnUrl,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.confirmation_url) {
+        window.location.href = data.confirmation_url;
+      } else {
+        toast({ title: "Ошибка", description: data.error || "Не удалось создать платёж", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Ошибка", description: "Не удалось создать платёж", variant: "destructive" });
+    } finally {
+      setIsPayingByCard(false);
+    }
   };
 
   return (
@@ -329,6 +362,27 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
                 <Icon name="RefreshCw" size={14} className={isLoadingBalance ? "animate-spin" : ""} />
               </Button>
             </div>
+          </div>
+
+          {/* Оплата картой */}
+          <div className="rounded-xl border p-4 space-y-3">
+            <div className="flex items-center gap-2 font-semibold">
+              <Icon name="CreditCard" size={18} className="text-primary" />
+              Банковская карта
+            </div>
+            <p className="text-xs text-muted-foreground">Visa, Mastercard, МИР — через ЮKassa. После оплаты тариф активируется автоматически.</p>
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={isPayingByCard}
+              onClick={handlePayByCard}
+            >
+              {isPayingByCard ? (
+                <><Icon name="Loader2" size={16} className="mr-2 animate-spin" />Перенаправление...</>
+              ) : (
+                <><Icon name="CreditCard" size={16} className="mr-2" />Оплатить {selectedPlan?.price} ₽ картой</>
+              )}
+            </Button>
           </div>
 
           {/* Пополнить кошелёк */}
