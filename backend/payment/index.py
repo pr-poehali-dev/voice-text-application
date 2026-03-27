@@ -1,6 +1,6 @@
 import json
 import os
-import uuid
+import uuid  # noqa
 import requests
 from datetime import datetime
 from wallet import get_balance, charge_balance
