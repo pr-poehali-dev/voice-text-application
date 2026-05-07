@@ -19,6 +19,7 @@ interface AdminUser {
   characters_used: number;
   created_at: string;
   total_generations: number;
+  plan_expires_at: string | null;
 }
 
 interface AdminStats {
@@ -219,6 +220,7 @@ const AdminUsersTable = ({ users, stats, isLoading, onNavigate, onRefresh, onRef
                         </div>
                       </TableCell>
                       <TableCell>
+                        <div className="flex flex-col gap-0.5">
                         <Select
                           value={u.plan}
                           onValueChange={async (plan) => {
@@ -249,6 +251,12 @@ const AdminUsersTable = ({ users, stats, isLoading, onNavigate, onRefresh, onRef
                             <SelectItem value="unlimited">Безлимит</SelectItem>
                           </SelectContent>
                         </Select>
+                        {u.plan_expires_at && u.plan !== 'free' && (
+                          <span className="text-xs text-muted-foreground">
+                            до {new Date(u.plan_expires_at).toLocaleDateString('ru', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                          </span>
+                        )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge

@@ -122,7 +122,8 @@ def handler(event: dict, context) -> dict:
                     u.plan, 
                     u.characters_used,
                     u.created_at,
-                    COALESCE(us.total_generations, 0) as total_generations
+                    COALESCE(us.total_generations, 0) as total_generations,
+                    u.plan_expires_at
                 FROM users u
                 LEFT JOIN user_stats us ON u.id = us.user_id
                 ORDER BY u.created_at DESC
@@ -140,7 +141,8 @@ def handler(event: dict, context) -> dict:
                     'plan': row[4],
                     'characters_used': row[5],
                     'created_at': row[6].isoformat() if row[6] else None,
-                    'total_generations': row[7]
+                    'total_generations': row[7],
+                    'plan_expires_at': row[8].isoformat() if row[8] else None
                 })
             
             cur.close()
