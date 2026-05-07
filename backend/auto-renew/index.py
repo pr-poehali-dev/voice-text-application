@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 WALLET_FUNCTION_URL = "https://functions.poehali.dev/8a886097-3bd9-4d94-8c19-d19ca3f3acbd"
 
 PLAN_PRICES = {
-    'basic': 490,
-    'pro': 1990,
-    'unlimited': 4990
+    'basic': 500,
+    'pro': 5000,
+    'unlimited': 15000
 }
 
 PLAN_NAMES = {
