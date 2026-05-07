@@ -8,6 +8,21 @@ import { useToast } from "@/hooks/use-toast";
 import type { User } from "./Index";
 
 const PAYMENT_URL = "https://functions.poehali.dev/a1399ab9-d55c-4f0b-8429-284aec5aa2c8";
+const ADMIN_PLANS_URL = "https://functions.poehali.dev/03f02e87-060b-4f7e-9d8f-df3ee8ea4b32";
+
+const PLAN_KEY_MAP: Record<string, string> = {
+  free: 'free', basic: 'starter', pro: 'professional', unlimited: 'business'
+};
+const PLAN_COLORS: Record<string, string> = {
+  free: 'bg-gray-100 text-gray-700', basic: 'bg-blue-100 text-blue-700',
+  pro: 'bg-purple-100 text-purple-700', unlimited: 'bg-yellow-100 text-yellow-700'
+};
+
+interface DbPlan {
+  id: string; name: string; price: number; characters_limit: number;
+  max_chars_per_request: number; duration_days: number; is_popular: boolean;
+  is_active: boolean; features: string[];
+}
 
 const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) => void }) => {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -15,7 +30,15 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [isPayingByCard, setIsPayingByCard] = useState(false);
+  const [dbPlans, setDbPlans] = useState<DbPlan[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetch(ADMIN_PLANS_URL)
+      .then(r => r.json())
+      .then(data => setDbPlans((data.plans || []).filter((p: DbPlan) => p.is_active)))
+      .catch(() => {});
+  }, []);
 
   const fetchBalance = async () => {
     setIsLoadingBalance(true);
@@ -63,82 +86,16 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
       setIsProcessing(null);
     }
   };
-  const plans = [
-    {
-      id: 'free',
-      name: 'Бесплатный',
-      planKey: 'free',
-      price: 0,
-      period: '',
-      description: 'Для знакомства с сервисом',
-      features: [
-        '5,000 символов в месяц',
-        'Базовые голоса',
-        'MP3 формат',
-        'Базовая поддержка'
-      ],
-      color: 'bg-gray-100 text-gray-700',
-      buttonText: 'Текущий тариф',
-      popular: false
-    },
-    {
-      id: 'basic',
-      name: 'Базовый',
-      planKey: 'starter',
-      price: 500,
-      period: 'месяц',
-      description: 'Для небольших проектов',
-      features: [
-        '50,000 символов в месяц',
-        'Все базовые голоса',
-        'MP3, WAV, OGG форматы',
-        'Приоритетная поддержка',
-        'История проектов'
-      ],
-      color: 'bg-blue-100 text-blue-700',
-      buttonText: 'Выбрать',
-      popular: false
-    },
-    {
-      id: 'pro',
-      name: 'Профи',
-      planKey: 'professional',
-      price: 5000,
-      period: 'месяц',
-      description: 'Для профессионалов',
-      features: [
-        '300,000 символов в месяц',
-        'Все голоса + премиум',
-        'Все форматы',
-        'Быстрая поддержка 24/7',
-        'API доступ',
-        'Без водяных знаков'
-      ],
-      color: 'bg-purple-100 text-purple-700',
-      buttonText: 'Выбрать',
-      popular: true
-    },
-    {
-      id: 'unlimited',
-      name: 'Безлимит',
-      planKey: 'business',
-      price: 15000,
-      period: 'месяц',
-      description: 'Для крупного бизнеса',
-      features: [
-        'Безлимитные символы в месяц',
-        'До 8,000 символов за запрос',
-        'Все голоса + эксклюзивные',
-        'Все форматы',
-        'Персональный менеджер',
-        'Полный API доступ',
-        'Кастомные голоса'
-      ],
-      color: 'bg-yellow-100 text-yellow-700',
-      buttonText: 'Связаться',
-      popular: false
-    }
-  ];
+  const plans = dbPlans.map(p => ({
+    id: p.id,
+    name: p.name,
+    planKey: PLAN_KEY_MAP[p.id] || p.id,
+    price: p.price,
+    period: p.price > 0 ? 'месяц' : '',
+    features: p.features,
+    color: PLAN_COLORS[p.id] || 'bg-gray-100 text-gray-700',
+    popular: p.is_popular
+  }));
 
   const handleSelectPlan = (planId: string, planName: string, planKey: string, price: number) => {
     if (planId === user.plan || planId === 'free') return;
@@ -205,6 +162,9 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
           </p>
         </div>
 
+        {dbPlans.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">Загрузка тарифов...</div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((plan) => (
             <Card 
@@ -225,7 +185,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
                   {plan.price === 0 ? 'Бесплатно' : `₽${plan.price}`}
                   {plan.period && <span className="text-base font-normal text-muted-foreground">/{plan.period}</span>}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
+                <p className="text-sm text-muted-foreground mt-2">{plan.price === 0 ? 'Для знакомства с сервисом' : `${plan.price.toLocaleString('ru')} ₽ в месяц`}</p>
               </CardHeader>
 
               <CardContent className="space-y-4">
@@ -244,7 +204,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
                   disabled={plan.id === user.plan}
                   onClick={() => handleSelectPlan(plan.id, plan.name, plan.planKey, plan.price)}
                 >
-                  {plan.id === user.plan ? 'Текущий тариф' : plan.buttonText}
+                  {plan.id === user.plan ? 'Текущий тариф' : plan.price === 0 ? 'Текущий тариф' : 'Выбрать'}
                 </Button>
               </CardContent>
             </Card>

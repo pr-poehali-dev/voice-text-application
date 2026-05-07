@@ -9,6 +9,7 @@ import NotificationBell from "@/components/NotificationBell";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminUsersTable from "@/components/admin/AdminUsersTable";
 import AdminStudio2 from "@/components/admin/AdminStudio2";
+import AdminPlansEditor from "@/components/admin/AdminPlansEditor";
 import type { User } from "./Index";
 
 interface AdminUser {
@@ -117,6 +118,10 @@ const AdminPanel = ({ user, onNavigate, onLogout, onUpdateUser }: { user: User; 
               <Icon name="Users" size={16} className="mr-2" />
               Пользователи
             </TabsTrigger>
+            <TabsTrigger value="plans">
+              <Icon name="CreditCard" size={16} className="mr-2" />
+              Тарифы
+            </TabsTrigger>
             <TabsTrigger value="studio2">
               <Icon name="Mic" size={16} className="mr-2" />
               Студия №2
@@ -135,6 +140,10 @@ const AdminPanel = ({ user, onNavigate, onLogout, onUpdateUser }: { user: User; 
               currentUserId={user.id}
               onUpdateCurrentUser={onUpdateUser}
             />
+          </TabsContent>
+
+          <TabsContent value="plans">
+            <AdminPlansEditor />
           </TabsContent>
 
           <TabsContent value="studio2">
