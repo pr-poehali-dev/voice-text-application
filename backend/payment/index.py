@@ -18,24 +18,29 @@ PLAN_ID_TO_KEY = {
     'unlimited': 'business'
 }
 
-PLAN_NAMES = {
-    'basic': 'Базовый',
-    'pro': 'Профи',
-    'unlimited': 'Безлимит'
-}
-
-PLAN_PRICES = {
-    'starter': 500,
-    'professional': 5000,
-    'business': 15000
-}
-
 # Маппинг planKey -> plan_id в БД
 PLAN_KEY_TO_ID = {
     'starter': 'basic',
     'professional': 'pro',
     'business': 'unlimited'
 }
+
+def get_plan_from_db(conn, plan_id: str) -> dict:
+    """Получить данные тарифа из таблицы plans по plan_id (basic/pro/unlimited)."""
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, price, duration_days FROM plans WHERE id = %s", (plan_id,))
+    row = cur.fetchone()
+    cur.close()
+    if not row:
+        return None
+    return {'id': row[0], 'name': row[1], 'price': row[2], 'duration_days': row[3]}
+
+def get_plan_by_key(conn, plan_key: str) -> dict:
+    """Получить данные тарифа из БД по planKey (starter/professional/business)."""
+    plan_id = PLAN_KEY_TO_ID.get(plan_key)
+    if not plan_id:
+        return None
+    return get_plan_from_db(conn, plan_id)
 
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -89,12 +94,15 @@ def handler(event: dict, context) -> dict:
             return err('Не передан email пользователя', 401)
         try:
             body = json.loads(event.get('body', '{}'))
-            plan = body.get('plan')
-            if plan not in PLAN_PRICES:
+            plan_key = body.get('plan')
+            conn = get_db()
+            plan_data = get_plan_by_key(conn, plan_key)
+            conn.close()
+            if not plan_data:
                 return err('Неверный тарифный план')
-            amount = PLAN_PRICES[plan]
-            result = charge_balance(user_email, amount, plan)
-            return ok({'success': True, 'plan': plan, **result})
+            amount = plan_data['price']
+            result = charge_balance(user_email, amount, plan_key)
+            return ok({'success': True, 'plan': plan_key, **result})
         except ValueError as e:
             return err(str(e))
         except Exception as e:
@@ -116,10 +124,13 @@ def handler(event: dict, context) -> dict:
             plan_name = body.get('plan_name', 'Подписка')
             return_url = body.get('return_url', 'https://voiceal.ru')
 
-            if plan not in PLAN_PRICES:
+            conn = get_db()
+            plan_data = get_plan_by_key(conn, plan)
+            conn.close()
+            if not plan_data:
                 return err('Неверный тарифный план')
 
-            amount = PLAN_PRICES[plan]
+            amount = plan_data['price']
             idempotence_key = str(uuid.uuid4())
 
             payment_data = {
@@ -255,19 +266,20 @@ def handler(event: dict, context) -> dict:
             conn.close()
             return err('Пользователь не найден', 404)
         plan_db_id = row[0]
-        plan_key = PLAN_ID_TO_KEY.get(plan_db_id)
-        if not plan_key:
+        plan_data = get_plan_from_db(conn, plan_db_id)
+        if not plan_data:
             cur.close()
             conn.close()
             return err('У вас нет активного платного тарифа')
-        amount = PLAN_PRICES[plan_key]
+        amount = plan_data['price']
+        duration_days = plan_data['duration_days']
         try:
             result = charge_balance(user_email, amount, plan_db_id)
         except ValueError as e:
             cur.close()
             conn.close()
             return err(str(e))
-        expires_at = datetime.now() + timedelta(days=30)
+        expires_at = datetime.now() + timedelta(days=duration_days)
         cur.execute(
             "UPDATE users SET plan_expires_at = %s, characters_used = 0, usage_reset_date = CURRENT_DATE WHERE id = %s",
             (expires_at, int(user_id))
@@ -275,11 +287,10 @@ def handler(event: dict, context) -> dict:
         conn.commit()
         cur.close()
         conn.close()
-        plan_name = PLAN_NAMES.get(plan_db_id, plan_db_id)
         return ok({
             'success': True,
             'plan': plan_db_id,
-            'plan_name': plan_name,
+            'plan_name': plan_data['name'],
             'amount_charged': amount,
             'new_balance': result['new_balance'],
             'plan_expires_at': expires_at.isoformat()
