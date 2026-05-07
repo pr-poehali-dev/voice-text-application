@@ -25,9 +25,9 @@ PLAN_NAMES = {
 }
 
 PLAN_PRICES = {
-    'starter': 490,
-    'professional': 1990,
-    'business': 4990
+    'starter': 500,
+    'professional': 5000,
+    'business': 15000
 }
 
 # Маппинг planKey -> plan_id в БД

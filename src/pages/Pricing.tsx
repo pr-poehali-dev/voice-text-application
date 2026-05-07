@@ -85,7 +85,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
       id: 'basic',
       name: 'Базовый',
       planKey: 'starter',
-      price: 490,
+      price: 500,
       period: 'месяц',
       description: 'Для небольших проектов',
       features: [
@@ -103,7 +103,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
       id: 'pro',
       name: 'Профи',
       planKey: 'professional',
-      price: 1990,
+      price: 5000,
       period: 'месяц',
       description: 'Для профессионалов',
       features: [
@@ -122,7 +122,7 @@ const Pricing = ({ user, onNavigate }: { user: User; onNavigate: (page: string) 
       id: 'unlimited',
       name: 'Безлимит',
       planKey: 'business',
-      price: 4990,
+      price: 15000,
       period: 'месяц',
       description: 'Для крупного бизнеса',
       features: [
