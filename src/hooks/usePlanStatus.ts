@@ -17,7 +17,7 @@ export function usePlanStatus(user: User | null): PlanStatus {
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user || !PAID_PLANS.includes(user.plan) || user.isDemo) return;
+    if (!user || !PAID_PLANS.includes(user.plan) || user.isDemo || user.role === 'admin') return;
     fetch(`${PAYMENT_URL}?action=subscription`, {
       headers: { 'X-User-Id': String(user.id), 'X-User-Email': user.email }
     })
@@ -30,7 +30,7 @@ export function usePlanStatus(user: User | null): PlanStatus {
       .catch(() => {});
   }, [user?.id]);
 
-  if (!user || !PAID_PLANS.includes(user.plan) || user.isDemo) {
+  if (!user || !PAID_PLANS.includes(user.plan) || user.isDemo || user.role === 'admin') {
     return { planExpiresAt: null, daysLeft: null, isExpired: false, isBlocked: false, isWarning: false };
   }
 
