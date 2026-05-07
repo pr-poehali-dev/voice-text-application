@@ -35,7 +35,7 @@ interface AdminStats {
   activity: Array<{date: string; count: number}>;
 }
 
-const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (page: string) => void; onLogout: () => void }) => {
+const AdminPanel = ({ user, onNavigate, onLogout, onUpdateUser }: { user: User; onNavigate: (page: string) => void; onLogout: () => void; onUpdateUser?: (fields: Partial<User>) => void }) => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -132,6 +132,8 @@ const AdminPanel = ({ user, onNavigate, onLogout }: { user: User; onNavigate: (p
               onNavigate={onNavigate}
               onRefresh={fetchUsers}
               onRefreshStats={fetchStats}
+              currentUserId={user.id}
+              onUpdateCurrentUser={onUpdateUser}
             />
           </TabsContent>
 

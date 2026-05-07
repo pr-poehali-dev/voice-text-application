@@ -41,6 +41,8 @@ interface AdminUsersTableProps {
   onNavigate: (page: string) => void;
   onRefresh: () => void;
   onRefreshStats: () => void;
+  currentUserId?: number;
+  onUpdateCurrentUser?: (fields: Partial<{ plan: string; role: string }>) => void;
 }
 
 const ADMIN_USERS_URL = 'https://functions.poehali.dev/fc8cc205-a9e9-4f9d-b4f3-5921b5c6743d';
@@ -64,7 +66,7 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString('ru', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-const AdminUsersTable = ({ users, stats, isLoading, onNavigate, onRefresh, onRefreshStats }: AdminUsersTableProps) => {
+const AdminUsersTable = ({ users, stats, isLoading, onNavigate, onRefresh, onRefreshStats, currentUserId, onUpdateCurrentUser }: AdminUsersTableProps) => {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
@@ -89,12 +91,14 @@ const AdminUsersTable = ({ users, stats, isLoading, onNavigate, onRefresh, onRef
   const handleSaveEdit = async () => {
     if (!selectedUser) return;
     try {
+      const updates: Partial<{ plan: string; role: string }> = {};
       if (newPlan !== selectedUser.plan) {
         await fetch(ADMIN_USERS_URL, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: selectedUser.id, action: 'update_plan', plan: newPlan })
         });
+        updates.plan = newPlan;
       }
       if (newRole !== selectedUser.role) {
         await fetch(ADMIN_USERS_URL, {
@@ -102,6 +106,10 @@ const AdminUsersTable = ({ users, stats, isLoading, onNavigate, onRefresh, onRef
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: selectedUser.id, action: 'update_role', role: newRole })
         });
+        updates.role = newRole;
+      }
+      if (selectedUser.id === currentUserId && Object.keys(updates).length > 0) {
+        onUpdateCurrentUser?.(updates);
       }
       toast({ title: "Успешно", description: "Данные пользователя обновлены" });
       setShowEditDialog(false);
@@ -222,6 +230,7 @@ const AdminUsersTable = ({ users, stats, isLoading, onNavigate, onRefresh, onRef
                                 body: JSON.stringify({ userId: u.id, action: 'update_plan', plan })
                               });
                               toast({ title: "Тариф обновлён", description: `${u.name} → ${planNames[plan as keyof typeof planNames]}` });
+                              if (u.id === currentUserId) onUpdateCurrentUser?.({ plan });
                               onRefresh();
                             } catch {
                               toast({ title: "Ошибка", description: "Не удалось сменить тариф", variant: "destructive" });

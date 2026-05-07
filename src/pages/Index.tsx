@@ -109,6 +109,15 @@ const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
     setCurrentPage(page);
   };
 
+  const handleUpdateUser = (fields: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...fields };
+      localStorage.setItem('voiceAppUser', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const handleDemoRegister = () => {
     setUser(null);
     setCurrentPage('auth');
@@ -139,7 +148,7 @@ const Index = ({ startDemo }: { startDemo?: boolean } = {}) => {
             case "dashboard":
               return <Dashboard user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
             case "admin":
-              return user.role === 'admin' ? <AdminPanel user={user} onNavigate={handleNavigate} onLogout={handleLogout} /> : <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} demoProps={demoProps} />;
+              return user.role === 'admin' ? <AdminPanel user={user} onNavigate={handleNavigate} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : <Studio user={user} onNavigate={handleNavigate} onLogout={handleLogout} demoProps={demoProps} />;
             case "settings":
               return <Settings user={user} onNavigate={handleNavigate} onLogout={handleLogout} />;
             case "pricing":
