@@ -269,7 +269,7 @@ const Landing = ({ onNavigate, onStartDemo }: { onNavigate: (page: string) => vo
             <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl mb-2">Базовый</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold">₽490</span>
+                <span className="text-4xl font-bold">₽500</span>
                 <span className="text-muted-foreground"> / мес</span>
               </div>
             </CardHeader>
@@ -305,7 +305,7 @@ const Landing = ({ onNavigate, onStartDemo }: { onNavigate: (page: string) => vo
             <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl mb-2">Профи</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold">₽1,490</span>
+                <span className="text-4xl font-bold">₽5,000</span>
                 <span className="text-muted-foreground"> / мес</span>
               </div>
             </CardHeader>
@@ -342,7 +342,7 @@ const Landing = ({ onNavigate, onStartDemo }: { onNavigate: (page: string) => vo
             <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl mb-2">Безлимит</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold">₽4,990</span>
+                <span className="text-4xl font-bold">₽15,000</span>
                 <span className="text-muted-foreground"> / мес</span>
               </div>
             </CardHeader>
